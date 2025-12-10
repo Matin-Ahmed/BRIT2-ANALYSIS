@@ -18,10 +18,6 @@ WITH patient_ages AS (
       [BRIT].[Patient] A 
       INNER JOIN [BRIT].[Reference_GP_Practice] B 
       ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
-      INNER JOIN [BRIT].[patient_link] pl 
-      ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.GP_Medications med  
-      ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE 
       Sex = 'M'
 ),
