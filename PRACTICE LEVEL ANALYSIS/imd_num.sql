@@ -17,7 +17,7 @@ WITH patient_ages AS (
 adult_patients AS (
   SELECT *
   FROM patient_ages P
-  WHERE age >= 18 AND IMD_Score IS NOT NULL
+  WHERE age >= 18 AND IMD_Score IS NOT NULL AND IMD_Score > 0
 )
 INSERT INTO PerPracticeData(prac_code,prac_name,region,imd_num)
   SELECT 
