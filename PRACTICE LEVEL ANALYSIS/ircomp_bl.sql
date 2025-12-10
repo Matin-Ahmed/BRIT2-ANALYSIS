@@ -10,7 +10,7 @@ WITH patient_ages AS (
     PK_Patient_ID,
     med.FK_Patient_Link_ID,
     snomed.PK_Reference_SnomedCT_ID,
-    OrganisationCode AS prac_code,
+    B.OrganisationCode AS prac_code,
     B.Name AS prac_name,
     Region AS region,
     DATEDIFF(YEAR, dob, '2024-05-01') 
@@ -28,8 +28,11 @@ WITH patient_ages AS (
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
+      INNER JOIN BRIT.GP_Appointments appoint
+      ON appoint.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
-    med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2023-03-01 00:00:00' AS DATETIME) 
+    med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
+    AND med.EventDate BETWEEN appoint.AppointmentDate AND DATEADD(day, 30, appoint.AppointmentDate)
     AND snomed.ConceptID IN
 (
   '60404007',
