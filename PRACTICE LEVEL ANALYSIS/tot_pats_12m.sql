@@ -20,7 +20,7 @@ WITH patient_ages AS (
 adult_patients AS (
   SELECT *
   FROM patient_ages
-  where age > 18
+  where age >= 18
 )
 INSERT INTO PerPracticeData(prac_code,prac_name,region,tot_pats_12m)
 SELECT
