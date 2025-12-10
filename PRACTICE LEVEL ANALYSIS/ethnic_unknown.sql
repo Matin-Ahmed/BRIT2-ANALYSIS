@@ -17,7 +17,7 @@ WITH patient_ages AS (
   FROM 
     [BRIT].[Patient] A INNER JOIN [BRIT].[Reference_GP_Practice] B ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID
     INNER JOIN [BRIT].[patient_link] pl ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-  WHERE EthnicMainGroup = 'Refused and not stated group'
+  WHERE EthnicMainGroup = 'Refused and not stated group' or EthnicMainGroup IS NULL
 ),
 adult_patients AS (
   SELECT *
