@@ -1,6 +1,6 @@
 --------------------
 --age_media 
---Baseline  
+--Age calculated at baseline, incident otitis media during trial period   
 --Mean age of adult patients with incident otitis media during trial period
 --------------------
 
@@ -27,7 +27,7 @@ WITH patient_ages AS (
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
   WHERE
-    med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
+    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME) 
     AND snomed.ConceptID IN (
 '194290005',
 '7271000119107',
