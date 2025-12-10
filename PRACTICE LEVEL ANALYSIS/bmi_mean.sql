@@ -40,20 +40,29 @@
   ),
   adult_patients AS (
     SELECT 
-      PK_Patient_ID,
-      prac_code,
-      prac_name,
-      region,
-      EventDate,
-      MAX(BMI) AS BMI
-    FROM patient_ages
-    WHERE age >= 18  AND BMI >= 10 AND BMI <= 70
+      A.PK_Patient_ID,
+      A.prac_code,
+      A.prac_name,
+      A.region,
+      A.EventDate,
+      A.BMI
+    FROM patient_ages A INNER JOIN (
+                                  SELECT PK_Patient_ID,prac_code,prac_name,region,MAX(EventDate) AS EventDate
+                                  FROM patient_ages
+                                  GROUP BY PK_Patient_ID,prac_code,prac_name,region
+                                  ORDER BY PK_Patient_ID,prac_code,prac_name,region
+                                  ) B ON A.PK_Patient_ID = B.PK_Patient_ID 
+                                  AND A.prac_code = B.prac_code 
+                                  AND A.prac_name = B.prac_name 
+                                  AND A.region = B.region 
+                                  AND A.EventDate = B.EventDate 
+    WHERE A.age >= 18  AND A.BMI >= 10 AND A.BMI <= 70
   GROUP BY 
-      PK_Patient_ID,
-      prac_code,
-      prac_name,
-      region,
-      EventDate
+      A.PK_Patient_ID,
+      A.prac_code,
+      A.prac_name,
+      A.region,
+      A.EventDate
   )
   INSERT INTO PerPracticeData(prac_code,prac_name,region,bmi_mean)
     SELECT
