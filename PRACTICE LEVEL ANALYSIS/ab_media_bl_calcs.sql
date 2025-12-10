@@ -1,5 +1,5 @@
 ------------
--- ab_media_bl_calcs           
+-- ab_media_bl
 -- Baseline            
 -- Number of AB prescriptions given to adult patients for otitis media during baseline year
 ------------
@@ -7250,12 +7250,12 @@ adult_patients AS (
   FROM patient_ages
   WHERE age >= 18
 )
-INSERT INTO PerPracticeData(prac_code,prac_name,region,ab_media_bl_calcs)
+INSERT INTO PerPracticeData(prac_code,prac_name,region,ab_media_bl)
   SELECT
     prac_code,
     prac_name,
     region,
-    COUNT(FK_Patient_Link_ID) AS ab_media_bl_calcs
+    COUNT(FK_Patient_Link_ID) AS ab_media_bl
   FROM adult_patients
   GROUP BY prac_code,prac_name,region
   ORDER BY prac_code,prac_name,region
