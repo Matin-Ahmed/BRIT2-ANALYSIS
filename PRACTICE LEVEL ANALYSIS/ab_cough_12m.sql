@@ -29,7 +29,7 @@ WITH patient_ages AS (
       INNER JOIN BRIT.GP_Medications med_2
       ON med_2.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
-    med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
+    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME) 
     AND snomed.ConceptID IN ('161929000',
 '28743005',
 '272039006',
