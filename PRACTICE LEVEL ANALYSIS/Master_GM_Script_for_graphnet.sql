@@ -1,24 +1,34 @@
-DROP TABLE PerPracticeData;
-DROP TABLE PerPracticeDataFinal;
+------------------------------------------------------------
+-- DROP OLD TABLES
+------------------------------------------------------------
+IF OBJECT_ID('PerPracticeData', 'U') IS NOT NULL DROP TABLE PerPracticeData;
+IF OBJECT_ID('PerPracticeDataFinal', 'U') IS NOT NULL DROP TABLE PerPracticeDataFinal;
 
+------------------------------------------------------------
+-- CREATE PerPracticeData (MASTER TABLE)
+------------------------------------------------------------
 CREATE TABLE PerPracticeData (
     prac_code       VARCHAR(100),
     prac_name       VARCHAR(255),
     prac_group      VARCHAR(255),
-    region        VARCHAR(255),
+    region          VARCHAR(255),
+
     all_pats_12m NUMERIC(18, 4),
     tot_pats_12m NUMERIC(18, 4),
+
     age_mean NUMERIC(18, 4),
     age_num NUMERIC(18, 4),
     age_mean_ci NUMERIC(18, 4),
     age_num_ci NUMERIC(18, 4),
     age_subgrp NUMERIC(18, 4),
+
     age_uti NUMERIC(18, 4),
     age_cough NUMERIC(18, 4),
     age_throat NUMERIC(18, 4),
     age_media NUMERIC(18, 4),
     age_externa NUMERIC(18, 4),
     age_sinus NUMERIC(18, 4),
+
     sex_male NUMERIC(18, 4),
     sex_fem NUMERIC(18, 4),
     sex_male_ci NUMERIC(18, 4),
@@ -35,12 +45,14 @@ CREATE TABLE PerPracticeData (
     sex_f_externa NUMERIC(18, 4),
     sex_m_sinus NUMERIC(18, 4),
     sex_f_sinus NUMERIC(18, 4),
+
     ethnic_white NUMERIC(18, 4),
     ethnic_black NUMERIC(18, 4),
     ethnic_asian NUMERIC(18, 4),
     ethnic_mixed NUMERIC(18, 4),
     ethnic_other NUMERIC(18, 4),
     ethnic_unknown NUMERIC(18, 4),
+
     imd_median NUMERIC(18, 4),
     imd_num NUMERIC(18, 4),
     imd_most_dep NUMERIC(18, 4),
@@ -49,6 +61,7 @@ CREATE TABLE PerPracticeData (
     imd_aff NUMERIC(18, 4),
     imd_most_aff NUMERIC(18, 4),
     imd_subgrp NUMERIC(18, 4),
+
     cci_mean NUMERIC(18, 4),
     cci_num NUMERIC(18, 4),
     cci_mean_ci NUMERIC(18, 4),
@@ -59,26 +72,32 @@ CREATE TABLE PerPracticeData (
     cci_mean_media NUMERIC(18, 4),
     cci_mean_externa NUMERIC(18, 4),
     cci_mean_sinus NUMERIC(18, 4),
+
     consult_bl NUMERIC(18, 4),
     consult_12m NUMERIC(18, 4),
+
     ab_presc_bl NUMERIC(18, 4),
     ab_pat_bl NUMERIC(18, 4),
     ab_count_bl NUMERIC(18, 4),
+
     ab_uti_bl NUMERIC(18, 4),
     ab_cough_bl NUMERIC(18, 4),
     ab_throat_bl NUMERIC(18, 4),
     ab_media_bl NUMERIC(18, 4),
     ab_externa_bl NUMERIC(18, 4),
     ab_sinus_bl NUMERIC(18, 4),
+
     ab_presc_12m NUMERIC(18, 4),
     ab_pat_12m NUMERIC(18, 4),
     ab_count_12m NUMERIC(18, 4),
+
     ab_uti_12m NUMERIC(18, 4),
     ab_cough_12m NUMERIC(18, 4),
     ab_throat_12m NUMERIC(18, 4),
     ab_media_12m NUMERIC(18, 4),
     ab_externa_12m NUMERIC(18, 4),
     ab_sinus_12m NUMERIC(18, 4),
+
     infect_uti_bl NUMERIC(18, 4),
     infect_cough_bl NUMERIC(18, 4),
     infect_throat_bl NUMERIC(18, 4),
@@ -86,6 +105,7 @@ CREATE TABLE PerPracticeData (
     infect_externa_bl NUMERIC(18, 4),
     infect_sinus_bl NUMERIC(18, 4),
     infect_total_bl NUMERIC(18, 4),
+
     infect_uti_12m NUMERIC(18, 4),
     infect_cough_12m NUMERIC(18, 4),
     infect_throat_12m NUMERIC(18, 4),
@@ -93,8 +113,10 @@ CREATE TABLE PerPracticeData (
     infect_externa_12m NUMERIC(18, 4),
     infect_sinus_12m NUMERIC(18, 4),
     infect_total_12m NUMERIC(18, 4),
+
     ircomp_bl NUMERIC(18, 4),
     ircomp_12m NUMERIC(18, 4),
+
     risk_uti_12m NUMERIC(18, 4),
     risk_cough_12m NUMERIC(18, 4),
     risk_throat_12m NUMERIC(18, 4),
@@ -102,150 +124,48 @@ CREATE TABLE PerPracticeData (
     risk_externa_12m NUMERIC(18, 4),
     risk_sinus_12m NUMERIC(18, 4),
     risk_mean_12m NUMERIC(18, 4),
+
     bmi_mean NUMERIC(18, 4),
     bmi_num NUMERIC(18, 4),
+
     smoke_nev NUMERIC(18, 4),
     smoke_ex NUMERIC(18, 4),
     smoke_cur NUMERIC(18, 4),
     smoke_unk NUMERIC(18, 4),
+
     frail_modsev NUMERIC(18, 4),
     frail_fitmild NUMERIC(18, 4),
+
     flu_vac NUMERIC(18, 4),
+
     season_aut NUMERIC(18, 4),
     season_win NUMERIC(18, 4),
     season_spr NUMERIC(18, 4),
     season_sum NUMERIC(18, 4),
-    prac_merge      NUMERIC(18, 4),
-    prac_wd       NUMERIC(18, 4),
-    date_wd       NUMERIC(18, 4),
-    ab_cough_bl_calcs NUMERIC(18, 4),
-    ab_media_bl_calcs NUMERIC(18, 4)
 
+    prac_merge NUMERIC(18, 4),
+    prac_wd NUMERIC(18, 4),
+    date_wd NUMERIC(18, 4)
 );
 
+------------------------------------------------------------
+-- INSERT BASE PRACTICE ROWS
+------------------------------------------------------------
+INSERT INTO PerPracticeData (prac_code, prac_name, prac_group, region)
+SELECT 
+    OrganisationCode,
+    Name,
+    NULL,
+    Region
+FROM BRIT.Reference_GP_Practice;
 
-
-
-CREATE TABLE PerPracticeDataFinal (
-    prac_code       VARCHAR(100),
-    prac_name       VARCHAR(255),
-    prac_group      VARCHAR(255),
-    region        VARCHAR(255),
-    all_pats_12m NUMERIC(18, 4),
-    tot_pats_12m NUMERIC(18, 4),
-    age_mean NUMERIC(18, 4),
-    age_num NUMERIC(18, 4),
-    age_mean_ci NUMERIC(18, 4),
-    age_num_ci NUMERIC(18, 4),
-    age_subgrp NUMERIC(18, 4),
-    age_uti NUMERIC(18, 4),
-    age_cough NUMERIC(18, 4),
-    age_throat NUMERIC(18, 4),
-    age_media NUMERIC(18, 4),
-    age_externa NUMERIC(18, 4),
-    age_sinus NUMERIC(18, 4),
-    sex_male NUMERIC(18, 4),
-    sex_fem NUMERIC(18, 4),
-    sex_male_ci NUMERIC(18, 4),
-    sex_fem_ci NUMERIC(18, 4),
-    sex_m_uti NUMERIC(18, 4),
-    sex_f_uti NUMERIC(18, 4),
-    sex_m_cough NUMERIC(18, 4),
-    sex_f_cough NUMERIC(18, 4),
-    sex_m_throat NUMERIC(18, 4),
-    sex_f_throat NUMERIC(18, 4),
-    sex_m_media NUMERIC(18, 4),
-    sex_f_media NUMERIC(18, 4),
-    sex_m_externa NUMERIC(18, 4),
-    sex_f_externa NUMERIC(18, 4),
-    sex_m_sinus NUMERIC(18, 4),
-    sex_f_sinus NUMERIC(18, 4),
-    ethnic_white NUMERIC(18, 4),
-    ethnic_black NUMERIC(18, 4),
-    ethnic_asian NUMERIC(18, 4),
-    ethnic_mixed NUMERIC(18, 4),
-    ethnic_other NUMERIC(18, 4),
-    ethnic_unknown NUMERIC(18, 4),
-    imd_median NUMERIC(18, 4),
-    imd_num NUMERIC(18, 4),
-    imd_most_dep NUMERIC(18, 4),
-    imd_dep NUMERIC(18, 4),
-    imd_mid NUMERIC(18, 4),
-    imd_aff NUMERIC(18, 4),
-    imd_most_aff NUMERIC(18, 4),
-    imd_subgrp NUMERIC(18, 4),
-    cci_mean NUMERIC(18, 4),
-    cci_num NUMERIC(18, 4),
-    cci_mean_ci NUMERIC(18, 4),
-    cci_num_ci NUMERIC(18, 4),
-    cci_mean_uti NUMERIC(18, 4),
-    cci_mean_cough NUMERIC(18, 4),
-    cci_mean_throat NUMERIC(18, 4),
-    cci_mean_media NUMERIC(18, 4),
-    cci_mean_externa NUMERIC(18, 4),
-    cci_mean_sinus NUMERIC(18, 4),
-    consult_bl NUMERIC(18, 4),
-    consult_12m NUMERIC(18, 4),
-    ab_presc_bl NUMERIC(18, 4),
-    ab_pat_bl NUMERIC(18, 4),
-    ab_count_bl NUMERIC(18, 4),
-    ab_uti_bl NUMERIC(18, 4),
-    ab_cough_bl NUMERIC(18, 4),
-    ab_throat_bl NUMERIC(18, 4),
-    ab_media_bl NUMERIC(18, 4),
-    ab_externa_bl NUMERIC(18, 4),
-    ab_sinus_bl NUMERIC(18, 4),
-    ab_presc_12m NUMERIC(18, 4),
-    ab_pat_12m NUMERIC(18, 4),
-    ab_count_12m NUMERIC(18, 4),
-    ab_uti_12m NUMERIC(18, 4),
-    ab_cough_12m NUMERIC(18, 4),
-    ab_throat_12m NUMERIC(18, 4),
-    ab_media_12m NUMERIC(18, 4),
-    ab_externa_12m NUMERIC(18, 4),
-    ab_sinus_12m NUMERIC(18, 4),
-    infect_uti_bl NUMERIC(18, 4),
-    infect_cough_bl NUMERIC(18, 4),
-    infect_throat_bl NUMERIC(18, 4),
-    infect_media_bl NUMERIC(18, 4),
-    infect_externa_bl NUMERIC(18, 4),
-    infect_sinus_bl NUMERIC(18, 4),
-    infect_total_bl NUMERIC(18, 4),
-    infect_uti_12m NUMERIC(18, 4),
-    infect_cough_12m NUMERIC(18, 4),
-    infect_throat_12m NUMERIC(18, 4),
-    infect_media_12m NUMERIC(18, 4),
-    infect_externa_12m NUMERIC(18, 4),
-    infect_sinus_12m NUMERIC(18, 4),
-    infect_total_12m NUMERIC(18, 4),
-    ircomp_bl NUMERIC(18, 4),
-    ircomp_12m NUMERIC(18, 4),
-    risk_uti_12m NUMERIC(18, 4),
-    risk_cough_12m NUMERIC(18, 4),
-    risk_throat_12m NUMERIC(18, 4),
-    risk_media_12m NUMERIC(18, 4),
-    risk_externa_12m NUMERIC(18, 4),
-    risk_sinus_12m NUMERIC(18, 4),
-    risk_mean_12m NUMERIC(18, 4),
-    bmi_mean NUMERIC(18, 4),
-    bmi_num NUMERIC(18, 4),
-    smoke_nev NUMERIC(18, 4),
-    smoke_ex NUMERIC(18, 4),
-    smoke_cur NUMERIC(18, 4),
-    smoke_unk NUMERIC(18, 4),
-    frail_modsev NUMERIC(18, 4),
-    frail_fitmild NUMERIC(18, 4),
-    flu_vac NUMERIC(18, 4),
-    season_aut NUMERIC(18, 4),
-    season_win NUMERIC(18, 4),
-    season_spr NUMERIC(18, 4),
-    season_sum NUMERIC(18, 4),
-    prac_merge      NUMERIC(18, 4),
-    prac_wd       NUMERIC(18, 4),
-    date_wd       NUMERIC(18, 4),
-    ab_cough_bl_calcs       NUMERIC(18, 4),
-    ab_media_bl_calcs       NUMERIC(18, 4)
-);
+------------------------------------------------------------
+-- CREATE PerPracticeDataFinal (MUST MATCH EXACT ORDER ABOVE)
+------------------------------------------------------------
+SELECT *
+INTO PerPracticeDataFinal
+FROM PerPracticeData
+WHERE 1 = 0;
 
 --------------------
 -- all_pats_12m  
@@ -302,7 +222,7 @@ WITH patient_ages AS (
 adult_patients AS (
   SELECT *
   FROM patient_ages
-  where age > 18
+  where age >= 18
 )
 INSERT INTO PerPracticeData(prac_code,prac_name,region,tot_pats_12m)
 SELECT
@@ -808,7 +728,7 @@ INSERT INTO PerPracticeData(prac_code,prac_name,region,age_subgrp)
 
 --------------------
 -- age_uti 
--- Baseline  
+-- Age calculated at baseline, UTI during trial period 
 -- Mean age of adult patients with incident UTI during trial period
 --------------------
 
@@ -835,7 +755,7 @@ WITH patient_ages AS (
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
   WHERE
-    med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
+    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME)
     AND snomed.ConceptID IN (
                 '68226007',
                 '38822007',
@@ -881,7 +801,7 @@ INSERT INTO PerPracticeData(prac_code,prac_name,region,age_uti)
 
 --------------------
 -- age_cough 
--- Baseline  
+-- Age calculated at baseline, cough incident during trial  
 -- Mean age of adult patients with incident cough during trial period
 --------------------
 
@@ -908,7 +828,7 @@ WITH patient_ages AS (
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
   WHERE
-    med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
+    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME)
     AND snomed.ConceptID IN (
         '161929000',
         '28743005',
@@ -943,7 +863,7 @@ INSERT INTO PerPracticeData(prac_code,prac_name,region,age_cough)
 
 --------------------
 -- age_throat  
--- Baseline  
+-- Age calculated at baseline, incident sore throat during trial period  
 -- Mean age of adult patients with incident sore throat during trial period
 --------------------
 
@@ -970,7 +890,7 @@ WITH patient_ages AS (
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
   WHERE
-    med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
+    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME) 
     AND snomed.ConceptID IN (
 '195658003',
 '195671000',
@@ -1027,7 +947,7 @@ INSERT INTO PerPracticeData(prac_code,prac_name,region,age_throat)
 
 --------------------
 --age_media 
---Baseline  
+--Age calculated at baseline, incident otitis media during trial period   
 --Mean age of adult patients with incident otitis media during trial period
 --------------------
 
@@ -1054,7 +974,7 @@ WITH patient_ages AS (
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
   WHERE
-    med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
+    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME) 
     AND snomed.ConceptID IN (
 '194290005',
 '7271000119107',
@@ -1108,7 +1028,7 @@ INSERT INTO PerPracticeData(prac_code,prac_name,region,age_media)
 
 --------------------
 -- age_externa 
--- Baseline  
+-- Age calculated at baseline, incident otitis externa during trial period   
 -- Mean age of adult patients with incident otitis externa during trial period
 --------------------
 
@@ -1135,7 +1055,7 @@ WITH patient_ages AS (
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
   WHERE
-    med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
+    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME)
     AND snomed.ConceptID IN (
 '232212002',
 '54272002',
@@ -1183,7 +1103,7 @@ INSERT INTO PerPracticeData(prac_code,prac_name,region,age_externa)
 
 --------------------
 -- age_sinus 
--- Baseline  
+-- Age calculated at baseline, incident sinusitis during trial period   
 -- Mean age of adult patients with incident sinusitis during trial period
 --------------------
 
@@ -1210,7 +1130,7 @@ WITH patient_ages AS (
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
   WHERE
-    med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
+    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME) 
     AND snomed.ConceptID IN (
 '67832005',
 '91038008',
@@ -1268,10 +1188,6 @@ WITH patient_ages AS (
       [BRIT].[Patient] A 
       INNER JOIN [BRIT].[Reference_GP_Practice] B 
       ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
-      INNER JOIN [BRIT].[patient_link] pl 
-      ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.GP_Medications med  
-      ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE 
       Sex = 'M'
 ),
@@ -1360,7 +1276,7 @@ WITH patient_ages AS (
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
   WHERE
-    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME)
+    med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
     AND Sex = 'M'
     AND snomed.ConceptID IN (
       '161929000',
@@ -1552,7 +1468,7 @@ WITH patient_ages AS (
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
   WHERE
-    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME)
+    med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
     AND Sex = 'F'
     AND snomed.ConceptID IN (
       '161929000',
@@ -1744,7 +1660,7 @@ WITH patient_ages AS (
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
   WHERE
-    med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
+    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME)
     AND Sex = 'M'
     AND snomed.ConceptID IN (
                 '68226007',
@@ -1817,7 +1733,7 @@ WITH patient_ages AS (
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
   WHERE
-    med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
+    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME) 
     AND Sex = 'F'
     AND snomed.ConceptID IN (
                 '68226007',
@@ -1891,7 +1807,7 @@ WITH patient_ages AS (
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
   WHERE
-    med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
+    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME)
     AND Sex = 'M'
     AND snomed.ConceptID IN (
 '161929000',
@@ -1954,7 +1870,7 @@ WITH patient_ages AS (
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
   WHERE
-    med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
+    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME)
     AND Sex = 'F'
     AND snomed.ConceptID IN (
 '161929000',
@@ -2401,7 +2317,7 @@ INSERT INTO PerPracticeData(prac_code,prac_name,region,sex_m_externa)
 --------------------
 -- sex_f_externa 
 -- Trial period
--- umber of female adult patients with incident otitis externa during trial period
+-- Number of female adult patients with incident otitis externa during trial period
 --------------------
 
 WITH patient_ages AS (
@@ -2810,7 +2726,7 @@ WITH patient_ages AS (
   FROM 
     [BRIT].[Patient] A INNER JOIN [BRIT].[Reference_GP_Practice] B ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID
     INNER JOIN [BRIT].[patient_link] pl ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-  WHERE EthnicMainGroup = 'Refused and not stated group'
+  WHERE EthnicMainGroup = 'Refused and not stated group' or EthnicMainGroup IS NULL
 ),
 adult_patients AS (
   SELECT *
@@ -2846,7 +2762,7 @@ WITH patient_ages AS (
 adult_patients AS (
   SELECT DISTINCT prac_code,prac_name,region,P.IMD_Score
   FROM patient_ages P
-  WHERE age >= 18 AND IMD_Score IS NOT NULL
+  WHERE age >= 18 AND IMD_Score IS NOT NULL AND IMD_Score > 0
 ),
 practice_medians AS (
   SELECT DISTINCT
@@ -2877,7 +2793,7 @@ WITH patient_ages AS (
 adult_patients AS (
   SELECT *
   FROM patient_ages P
-  WHERE age >= 18 AND IMD_Score IS NOT NULL
+  WHERE age >= 18 AND IMD_Score IS NOT NULL AND IMD_Score > 0
 )
 INSERT INTO PerPracticeData(prac_code,prac_name,region,imd_num)
   SELECT 
@@ -3023,6 +2939,42 @@ INSERT INTO PerPracticeData(prac_code,prac_name,region,imd_most_aff)
   FROM adult_patients
   GROUP BY prac_code,prac_name,region
 ;
+
+--------------------
+-- imd_subgrp
+-- Baseline 
+-- Number of adult patients where IMD ranking <= 16422
+--------------------
+
+WITH patient_ages AS (
+  SELECT
+    PK_Patient_ID,
+    OrganisationCode AS prac_code,
+    B.Name AS prac_name,
+    Region AS region,
+    IMD_Score,
+    DATEDIFF(YEAR, dob, '2024-05-01')
+      - CASE WHEN MONTH(dob) > 5 OR (MONTH(dob) = 5 AND DAY(dob) > 1) THEN 1 ELSE 0 END AS age
+  FROM [BRIT].[Patient] A 
+    INNER JOIN [BRIT].[Reference_GP_Practice] B 
+      ON B.PK_Reference_GP_Practice_ID = A.FK_Reference_GP_Practice_ID
+),
+adult_patients AS (
+  SELECT *
+  FROM patient_ages P
+  WHERE age >= 18 
+    AND IMD_Score BETWEEN 1 AND 16422
+)
+INSERT INTO PerPracticeData(prac_code, prac_name, region, imd_subgrp)
+  SELECT 
+    prac_code,
+    prac_name,
+    region,
+    COUNT(DISTINCT PK_Patient_ID) AS imd_subgrp
+  FROM adult_patients
+  GROUP BY prac_code, prac_name, region
+;
+
 ------------
 --consult_bl  Baseline  Number of consultations for adult patients with common infections during baseline year.
 --------------------
@@ -47558,7 +47510,32 @@ WITH patient_ages AS (
 '43207311000001103',
 '10455811000001107',
 '10455911000001102',
-'10456011000001105')
+'10456011000001105',
+'884861000000100',
+'955681000000106',
+'1037331000000100',
+'955661000000102',
+'1037311000000100',
+'884861000000100',
+'884881000000109',
+'985151000000100',
+'945831000000105',
+'955651000000100',
+'955691000000108',
+'955701000000108',
+'1037351000000100',
+'1066171000000100',
+'1066181000000100',
+'1239861000000100',
+'985171000000109',
+'955651000000100',
+'955671000000109',
+'955691000000108',
+'955701000000108',
+'1037371000000100',
+'1066171000000100',
+'1066191000000100',
+'1239861000000100')
 ),
 adult_patients AS (
   SELECT PK_Patient_ID,prac_code,prac_name,region,count(FK_Patient_Link_ID) as pers_count
@@ -48188,435 +48165,427 @@ INSERT INTO PerPracticeData(prac_code,prac_name,region,infect_total_12m)
   ORDER BY prac_code,prac_name,region
 ;
 
-------------
--- ircomp_bl  
--- Baseline 
--- Number of infection-related complications within 30 days of consultation for adult patients during baseline year. Use the consultation 
--- date as the index date from 1st Feb 2023 to identify correct records.  
-------------
+----------------------------
+-- ircomp_bl
+-- Baseline
+-- Number of infection related complications within 30 days of a common infection consultation for adult patients during baseline.
+----------------------------
+
+WITH ci_events AS (
+  SELECT
+    A.PK_Patient_ID,
+    pl.PK_Patient_Link_ID,
+    B.OrganisationCode AS prac_code,
+    B.Name AS prac_name,
+    B.Region AS region,
+    med_ci.EventDate AS consult_date,
+    DATEDIFF(YEAR, A.dob, '2024-05-01')
+      - CASE 
+          WHEN MONTH(A.dob) > 5 OR (MONTH(A.dob) = 5 AND DAY(A.dob) > 1) THEN 1
+          ELSE 0
+        END AS age
+  FROM BRIT.Patient A
+    INNER JOIN BRIT.Reference_GP_Practice B
+      ON B.PK_Reference_GP_Practice_ID = A.FK_Reference_GP_Practice_ID
+    INNER JOIN BRIT.patient_link pl
+      ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+    INNER JOIN BRIT.GP_Events med_ci
+      ON med_ci.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+    INNER JOIN BRIT.Reference_SnomedCT snomed_ci
+      ON snomed_ci.PK_Reference_SnomedCT_ID = med_ci.FK_Reference_SnomedCT_ID
+  WHERE
+    med_ci.EventDate BETWEEN '2023-02-01' AND '2024-02-01'
+    AND snomed_ci.ConceptID IN (
+      '161929000','28743005','272039006','49727002','961781000006103',
+      '135883003','11833005','284523002','161923004','161924005','161925006',
+      '27836007','232212002','54272002','56663002','267665002','30250000',
+      '45855004','232214001','402699002','76583009','403432008','403433003',
+      '232224009','45431004','95812002','194202008','194204009','33934002',
+      '194203003','402697000','86981007','111856000','21954000','3135009',
+      '575931000000108','34129005','67832005','91038008','68272006',
+      '431231008','15805002','77919000','35923002','73237007','60130002',
+      '88850006','40055000','897657000','78737005','88348008','195790000',
+      '195788001','36971009','68226007','38822007','275412000','267204006',
+      '199107005','199106001','199108000','199109008','199110003','197926005',
+      '197853008','197927001','314940005','68566005','74741000006107',
+      '368991000119100','301011002','1','369001000119100','369011000119102',
+      '307534009','609491002','199111004','61373006','194290005',
+      '7271000119107','194288009','52353000','1088061000119105',
+      '1090681000119105','359609001','194240006','270490007','194289001',
+      '77478005','194281003','14948001','86279000','194282005','49252004',
+      '194286008','267756004','29350000','129127001','270491006','78868004',
+      '275481002','194237006','164236006','65363002','81564005','13420004',
+      '39288006','194287004','80327007','195658003','195671000','195669000',
+      '195666007','195667003','399050001','363746003','195656004','195673002',
+      '17741008','195657008','195668008','195803003','41188003','162388002',
+      '195804009','164256007','162397003','15033003','405737000','195677001',
+      '267102003','538331000000101','43878008','85769006','186357007',
+      '41582007','90176007','300932000','186963008','232427004','173599005',
+      '232417005','195662009'
+    )
+),
+
+comp_events AS (
+  SELECT
+    pl.PK_Patient_Link_ID,
+    med.EventDate AS comp_date,
+    B.OrganisationCode AS prac_code,
+    B.Name AS prac_name,
+    B.Region AS region,
+    BRIT.Reference_SnomedCT.PK_Reference_SnomedCT_ID,
+    BRIT.Reference_SnomedCT.ConceptID
+  FROM BRIT.Patient A
+    INNER JOIN BRIT.Reference_GP_Practice B
+      ON B.PK_Reference_GP_Practice_ID = A.FK_Reference_GP_Practice_ID
+    INNER JOIN BRIT.patient_link pl
+      ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+    INNER JOIN BRIT.GP_Events med
+      ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+    INNER JOIN BRIT.Reference_SnomedCT
+      ON BRIT.Reference_SnomedCT.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
+  WHERE
+    med.EventDate BETWEEN '2023-02-01' AND '2024-02-01'
+    AND BRIT.Reference_SnomedCT.ConceptID IN (
+      '60404007','721104000','447843005','448813005','58554001','72102005',
+      '192744002','79897009','80640009','386034005','392233007','2858002',
+      '449082003','91302008','396234004','3321001','95883001','129128006',
+      '371093006','15033003','192741005','164255006','10321002','186327003',
+      '186365005','23511006','449504009','448419003','192643004','192644005',
+      '192743008','27614006','111538005','52404001','271503005','196067009',
+      '128477000','36689008','45816000','27174002','18071005','609485004',
+      '40125005','276678006','66696003','240444009','447894003','23754003',
+      '312682007','314130008','335846001','28085001','448418006','4089001',
+      '372939007','449083008','30437004','447899008','32801008','33631007',
+      '271504004','313437008','441806004','4510004','48245008','51169003',
+      '568411000000108','601541000000108'
+    )
+),
+
+linked_complications AS (
+  SELECT DISTINCT
+    ci.prac_code,
+    ci.prac_name,
+    ci.region,
+    comp.PK_Patient_Link_ID,
+    comp.comp_date,
+    comp.PK_Reference_SnomedCT_ID
+  FROM ci_events ci
+    INNER JOIN comp_events comp
+      ON comp.PK_Patient_Link_ID = ci.PK_Patient_Link_ID
+     AND comp.comp_date > ci.consult_date
+     AND comp.comp_date <= DATEADD(day, 30, ci.consult_date)
+  WHERE
+    ci.age >= 18
+)
+
+INSERT INTO PerPracticeData(prac_code, prac_name, region, ircomp_bl)
+SELECT
+  prac_code,
+  prac_name,
+  region,
+  COUNT(*) AS ircomp_bl
+FROM linked_complications
+GROUP BY prac_code, prac_name, region
+ORDER BY prac_code, prac_name, region;
+
+----------------------------
+-- ircomp_12m
+-- Trial period
+-- Number of infection-related complications within 30 days of a common infection consultation for adult patients during the trial period.
+----------------------------
+
+WITH ci_events AS (
+  SELECT
+    A.PK_Patient_ID,
+    pl.PK_Patient_Link_ID,
+    B.OrganisationCode AS prac_code,
+    B.Name AS prac_name,
+    B.Region AS region,
+    med_ci.EventDate AS consult_date,
+    DATEDIFF(YEAR, A.dob, '2024-05-01')
+      - CASE 
+          WHEN MONTH(A.dob) > 5 OR (MONTH(A.dob) = 5 AND DAY(A.dob) > 1) THEN 1
+          ELSE 0
+        END AS age
+  FROM BRIT.Patient A
+    INNER JOIN BRIT.Reference_GP_Practice B
+      ON B.PK_Reference_GP_Practice_ID = A.FK_Reference_GP_Practice_ID
+    INNER JOIN BRIT.patient_link pl
+      ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+    INNER JOIN BRIT.GP_Events med_ci
+      ON med_ci.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+    INNER JOIN BRIT.Reference_SnomedCT snomed_ci
+      ON snomed_ci.PK_Reference_SnomedCT_ID = med_ci.FK_Reference_SnomedCT_ID
+  WHERE
+    med_ci.EventDate BETWEEN '2024-05-01' AND '2025-04-30'
+    AND snomed_ci.ConceptID IN (
+      '161929000','28743005','272039006','49727002','961781000006103',
+      '135883003','11833005','284523002','161923004','161924005','161925006',
+      '27836007','232212002','54272002','56663002','267665002','30250000',
+      '45855004','232214001','402699002','76583009','403432008','403433003',
+      '232224009','45431004','95812002','194202008','194204009','33934002',
+      '194203003','402697000','86981007','111856000','21954000','3135009',
+      '575931000000108','34129005','67832005','91038008','68272006',
+      '431231008','15805002','77919000','35923002','73237007','60130002',
+      '88850006','40055000','897657000','78737005','88348008','195790000',
+      '195788001','36971009','68226007','38822007','275412000','267204006',
+      '199107005','199106001','199108000','199109008','199110003','197926005',
+      '197853008','197927001','314940005','68566005','74741000006107',
+      '368991000119100','301011002','1','369001000119100','369011000119102',
+      '307534009','609491002','199111004','61373006','194290005',
+      '7271000119107','194288009','52353000','1088061000119105',
+      '1090681000119105','359609001','194240006','270490007','194289001',
+      '77478005','194281003','14948001','86279000','194282005','49252004',
+      '194286008','267756004','29350000','129127001','270491006','78868004',
+      '275481002','194237006','164236006','65363002','81564005','13420004',
+      '39288006','194287004','80327007','195658003','195671000','195669000',
+      '195666007','195667003','399050001','363746003','195656004','195673002',
+      '17741008','195657008','195668008','195803003','41188003','162388002',
+      '195804009','164256007','162397003','15033003','405737000','195677001',
+      '267102003','538331000000101','43878008','85769006','186357007',
+      '41582007','90176007','300932000','186963008','232427004','173599005',
+      '232417005','195662009'
+    )
+),
+
+comp_events AS (
+  SELECT
+    pl.PK_Patient_Link_ID,
+    med.EventDate AS comp_date,
+    B.OrganisationCode AS prac_code,
+    B.Name AS prac_name,
+    B.Region AS region,
+    BRIT.Reference_SnomedCT.PK_Reference_SnomedCT_ID,
+    BRIT.Reference_SnomedCT.ConceptID
+  FROM BRIT.Patient A
+    INNER JOIN BRIT.Reference_GP_Practice B
+      ON B.PK_Reference_GP_Practice_ID = A.FK_Reference_GP_Practice_ID
+    INNER JOIN BRIT.patient_link pl
+      ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+    INNER JOIN BRIT.GP_Events med
+      ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+    INNER JOIN BRIT.Reference_SnomedCT
+      ON BRIT.Reference_SnomedCT.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
+  WHERE
+    med.EventDate BETWEEN '2024-05-01' AND '2025-05-30'
+    AND BRIT.Reference_SnomedCT.ConceptID IN (
+      '60404007','721104000','447843005','448813005','58554001','72102005',
+      '192744002','79897009','80640009','386034005','392233007','2858002',
+      '449082003','91302008','396234004','3321001','95883001','129128006',
+      '371093006','15033003','192741005','164255006','10321002','186327003',
+      '186365005','23511006','449504009','448419003','192643004','192644005',
+      '192743008','27614006','111538005','52404001','271503005','196067009',
+      '128477000','36689008','45816000','27174002','18071005','609485004',
+      '40125005','276678006','66696003','240444009','447894003','23754003',
+      '312682007','314130008','335846001','28085001','448418006','4089001',
+      '372939007','449083008','30437004','447899008','32801008','33631007',
+      '271504004','313437008','441806004','4510004','48245008','51169003',
+      '568411000000108','601541000000108'
+    )
+),
+
+linked_complications AS (
+  SELECT DISTINCT
+    ci.prac_code,
+    ci.prac_name,
+    ci.region,
+    comp.PK_Patient_Link_ID,
+    comp.comp_date,
+    comp.PK_Reference_SnomedCT_ID
+  FROM ci_events ci
+    INNER JOIN comp_events comp
+      ON comp.PK_Patient_Link_ID = ci.PK_Patient_Link_ID
+     AND comp.comp_date > ci.consult_date
+     AND comp.comp_date <= DATEADD(day, 30, ci.consult_date)
+  WHERE
+    ci.age >= 18
+)
+
+INSERT INTO PerPracticeData(prac_code, prac_name, region, ircomp_12m)
+SELECT
+  prac_code,
+  prac_name,
+  region,
+  COUNT(*) AS ircomp_12m
+FROM linked_complications
+GROUP BY prac_code, prac_name, region
+ORDER BY prac_code, prac_name, region;
+
+----------------------
+-- bmi_num
+-- Baseline
+-- Number of adult patients with a BMI score using the most recent record.
+----------------------
 
 WITH patient_ages AS (
   SELECT
-    PK_Patient_ID,
-    med.FK_Patient_Link_ID,
-    snomed.PK_Reference_SnomedCT_ID,
-    OrganisationCode AS prac_code,
+    A.PK_Patient_ID,
+    B.OrganisationCode AS prac_code,
     B.Name AS prac_name,
-    Region AS region,
-    DATEDIFF(YEAR, dob, '2024-05-01') 
-      - CASE 
-          WHEN MONTH(dob) > 5 OR (MONTH(dob) = 5 AND DAY(dob) > 1) THEN 1 
-          ELSE 0 
-        END AS age
-  FROM 
-      [BRIT].[Patient] A 
-      INNER JOIN [BRIT].[Reference_GP_Practice] B 
-      ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
-      INNER JOIN [BRIT].[patient_link] pl 
-      ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.GP_Events med  
-      ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.Reference_SnomedCT snomed
-      ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
-  WHERE
-    med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2023-03-01 00:00:00' AS DATETIME) 
-    AND snomed.ConceptID IN
-(
-  '60404007',
-  '721104000',
-  '447843005',
-  '448813005',
-  '58554001',
-  '72102005',
-  '192744002',
-  '79897009',
-  '80640009',
-  '386034005',
-  '392233007',
-  '2858002',
-  '449082003',
-  '91302008',
-  '396234004',
-  '3321001',
-  '95883001',
-  '129128006',
-  '371093006',
-  '15033003',
-  '192741005',
-  '164255006',
-  '10321002',
-  '186327003',
-  '186365005',
-  '23511006',
-  '449504009',
-  '448419003',
-  '192643004',
-  '192644005',
-  '192743008',
-  '27614006',
-  '111538005',
-  '52404001',
-  '271503005',
-  '196067009',
-  '128477000',
-  '36689008',
-  '45816000',
-  '27174002',
-  '18071005',
-  '609485004',
-  '40125005',
-  '276678006',
-  '66696003',
-  '240444009',
-  '447894003',
-  '23754003',
-  '312682007',
-  '314130008',
-  '335846001',
-  '28085001',
-  '448418006',
-  '4089001',
-  '372939007',
-  '449083008',
-  '30437004',
-  '447899008',
-  '32801008',
-  '33631007',
-  '271504004',
-  '313437008',
-  '441806004',
-  '4510004',
-  '48245008',
-  '51169003',
-  '568411000000108',
-  '601541000000108'
-)
+    B.Region AS region,
 
+    TRY_CONVERT(
+        FLOAT,
+        TRY_CONVERT(NVARCHAR(MAX), BMI_TABLE.BMI)
+    ) AS BMI,
+
+    BMI_TABLE.EventDate,
+
+    DATEDIFF(YEAR, A.dob, '2024-05-01')
+      - CASE 
+          WHEN MONTH(A.dob) > 5 OR (MONTH(A.dob) = 5 AND DAY(A.dob) > 1) THEN 1
+          ELSE 0
+        END AS age
+
+  FROM BRIT.Patient A
+    INNER JOIN BRIT.Reference_GP_Practice B
+      ON B.PK_Reference_GP_Practice_ID = A.FK_Reference_GP_Practice_ID
+    INNER JOIN BRIT.patient_link pl
+      ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+    INNER JOIN (
+        SELECT 
+            E.FK_Patient_Link_ID,
+            E.EventDate,
+            E.Value AS BMI
+        FROM BRIT.GP_Events E
+        INNER JOIN BRIT.Reference_SnomedCT R
+            ON E.FK_Reference_SnomedCT_ID = R.PK_Reference_SnomedCT_ID
+        WHERE R.ConceptID IN (
+            '60621009',
+            '140075008',
+            '162859006',
+            '363807006'
+        )
+    ) AS BMI_TABLE
+      ON BMI_TABLE.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
 ),
-adult_patients AS (
-  SELECT *
-  FROM patient_ages
-  WHERE age >= 18
-)
-INSERT INTO PerPracticeData(prac_code,prac_name,region,ircomp_bl)
+
+most_recent_bmi AS (
   SELECT
+    PK_Patient_ID,
     prac_code,
     prac_name,
     region,
-    COUNT(DISTINCT FK_Patient_Link_ID) AS ircomp_bl
-  FROM adult_patients
-  GROUP BY prac_code,prac_name,region
-  ORDER BY prac_code,prac_name,region
-;
-
-------------
--- ircomp_12m 
--- One year follow-up 
--- Number of infection-related complications within 30 days of consultation for adult patients during trial period. Use the consultation 
--- date as the index date from 1st May 2024 to identify correct records.  
-------------
-
-WITH patient_ages AS (
-  SELECT
-    PK_Patient_ID,
-    med.FK_Patient_Link_ID,
-    snomed.PK_Reference_SnomedCT_ID,
-    OrganisationCode AS prac_code,
-    B.Name AS prac_name,
-    Region AS region,
-    DATEDIFF(YEAR, dob, '2024-05-01') 
-      - CASE 
-          WHEN MONTH(dob) > 5 OR (MONTH(dob) = 5 AND DAY(dob) > 1) THEN 1 
-          ELSE 0 
-        END AS age
-  FROM 
-      [BRIT].[Patient] A 
-      INNER JOIN [BRIT].[Reference_GP_Practice] B 
-      ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
-      INNER JOIN [BRIT].[patient_link] pl 
-      ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.GP_Events med  
-      ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.Reference_SnomedCT snomed
-      ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
-  WHERE
-    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2024-06-01 00:00:00' AS DATETIME) 
-    AND snomed.ConceptID IN
-(
-  '60404007',
-  '721104000',
-  '447843005',
-  '448813005',
-  '58554001',
-  '72102005',
-  '192744002',
-  '79897009',
-  '80640009',
-  '386034005',
-  '392233007',
-  '2858002',
-  '449082003',
-  '91302008',
-  '396234004',
-  '3321001',
-  '95883001',
-  '129128006',
-  '371093006',
-  '15033003',
-  '192741005',
-  '164255006',
-  '10321002',
-  '186327003',
-  '186365005',
-  '23511006',
-  '449504009',
-  '448419003',
-  '192643004',
-  '192644005',
-  '192743008',
-  '27614006',
-  '111538005',
-  '52404001',
-  '271503005',
-  '196067009',
-  '128477000',
-  '36689008',
-  '45816000',
-  '27174002',
-  '18071005',
-  '609485004',
-  '40125005',
-  '276678006',
-  '66696003',
-  '240444009',
-  '447894003',
-  '23754003',
-  '312682007',
-  '314130008',
-  '335846001',
-  '28085001',
-  '448418006',
-  '4089001',
-  '372939007',
-  '449083008',
-  '30437004',
-  '447899008',
-  '32801008',
-  '33631007',
-  '271504004',
-  '313437008',
-  '441806004',
-  '4510004',
-  '48245008',
-  '51169003',
-  '568411000000108',
-  '601541000000108'
-)
-
-),
-adult_patients AS (
-  SELECT *
+    MAX(EventDate) AS EventDate
   FROM patient_ages
-  WHERE age >= 18
+  GROUP BY PK_Patient_ID, prac_code, prac_name, region
+),
+
+adult_patients AS (
+  SELECT DISTINCT
+    A.PK_Patient_ID,
+    A.prac_code,
+    A.prac_name,
+    A.region
+  FROM patient_ages A
+    INNER JOIN most_recent_bmi B
+      ON A.PK_Patient_ID = B.PK_Patient_ID
+      AND A.prac_code   = B.prac_code
+      AND A.prac_name   = B.prac_name
+      AND A.region      = B.region
+      AND A.EventDate   = B.EventDate
+  WHERE 
+    A.age >= 18
+    AND A.BMI BETWEEN 10 AND 70
 )
-INSERT INTO PerPracticeData(prac_code,prac_name,region,ircomp_12m)
-  SELECT
-    prac_code,
-    prac_name,
-    region,
-    COUNT(DISTINCT FK_Patient_Link_ID) AS ircomp_12m
-  FROM adult_patients
-  GROUP BY prac_code,prac_name,region
-  ORDER BY prac_code,prac_name,region
+
+INSERT INTO PerPracticeData(prac_code, prac_name, region, bmi_num)
+SELECT
+  prac_code,
+  prac_name,
+  region,
+  COUNT(*) AS bmi_num
+FROM adult_patients
+GROUP BY prac_code, prac_name, region
 ;
 
 ----------------------
 -- bmi_mean
--- Most recent record Mean BMI score of adult patients using the most recent record.
+-- Baseline
+-- Mean BMI score of adult patients using the most recent BMI record.
 ----------------------
 
-  WITH patient_ages AS (
-    SELECT
-      PK_Patient_ID,
-      OrganisationCode AS prac_code,
-      B.Name AS prac_name,
-      Region AS region,
-      CONVERT(FLOAT,CONVERT(VARCHAR(20),BMI_TABLE.BMI)) AS BMI,
-      EventDate,
-      DATEDIFF(YEAR, dob, '2024-05-01') 
-        - CASE 
-            WHEN MONTH(dob) > 5 OR (MONTH(dob) = 5 AND DAY(dob) > 1) THEN 1 
-            ELSE 0 
-          END AS age
-    FROM 
-        [BRIT].[Patient] A 
-        INNER JOIN [BRIT].[Reference_GP_Practice] B 
-        ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
-        INNER JOIN [BRIT].[patient_link] pl 
-        ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-        INNER JOIN 
-  (
-  SELECT [FK_Patient_Link_ID]
-        ,[EventDate]
-        ,[Value] AS BMI
-    FROM [BRIT].[GP_Events] E
-      INNER JOIN [BRIT].[Reference_SnomedCT] R
+WITH patient_ages AS (
+  SELECT
+    A.PK_Patient_ID,
+    B.OrganisationCode AS prac_code,
+    B.Name AS prac_name,
+    B.Region AS region,
+
+    TRY_CONVERT(
+        FLOAT,
+        TRY_CONVERT(NVARCHAR(MAX), BMI_TABLE.BMI)
+    ) AS BMI,
+
+    BMI_TABLE.EventDate,
+
+    DATEDIFF(YEAR, A.dob, '2024-05-01')
+      - CASE 
+          WHEN MONTH(A.dob) > 5 OR (MONTH(A.dob) = 5 AND DAY(A.dob) > 1) THEN 1
+          ELSE 0
+        END AS age
+
+  FROM BRIT.Patient A
+    INNER JOIN BRIT.Reference_GP_Practice B
+      ON B.PK_Reference_GP_Practice_ID = A.FK_Reference_GP_Practice_ID
+    INNER JOIN BRIT.patient_link pl
+      ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+    INNER JOIN (
+        SELECT 
+            E.FK_Patient_Link_ID,
+            E.EventDate,
+            E.Value AS BMI
+        FROM BRIT.GP_Events E
+        INNER JOIN BRIT.Reference_SnomedCT R
           ON E.FK_Reference_SnomedCT_ID = R.PK_Reference_SnomedCT_ID
-    WHERE R.ConceptID IN (
-       '60621009'
-      ,'140075008'
-      ,'162859006'
-      ,'363807006')
-      ) AS BMI_TABLE ON BMI_TABLE.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-
-  ),
-  adult_patients AS (
-    SELECT 
-      PK_Patient_ID,
-      prac_code,
-      prac_name,
-      region,
-      EventDate,
-      MAX(BMI) AS BMI
-    FROM patient_ages
-    WHERE age >= 18  AND BMI >= 10 AND BMI <= 70
-  GROUP BY 
-      PK_Patient_ID,
-      prac_code,
-      prac_name,
-      region,
-      EventDate
-  )
-  INSERT INTO PerPracticeData(prac_code,prac_name,region,bmi_mean)
-    SELECT
-      prac_code,
-      prac_name,
-      region,
-      AVG(CAST(BMI AS FLOAT)) AS bmi_mean
-    FROM adult_patients
-    GROUP BY prac_code,prac_name,region
-    ORDER BY prac_code,prac_name,region
-  ;
-
-------------
--- bmi_num  
--- Most recent record 
--- Number of adult patients with BMI score using the most recent record.
-------------
-
-WITH patient_ages AS (
-  SELECT
-    PK_Patient_ID,
-    OrganisationCode AS prac_code,
-    B.Name AS prac_name,
-    Region AS region,
-    CONVERT(FLOAT,CONVERT(VARCHAR(20),BMI_TABLE.BMI)) AS BMI,
-    EventDate,
-    DATEDIFF(YEAR, dob, '2024-05-01') 
-      - CASE 
-          WHEN MONTH(dob) > 5 OR (MONTH(dob) = 5 AND DAY(dob) > 1) THEN 1 
-          ELSE 0 
-        END AS age
-  FROM 
-      [BRIT].[Patient] A 
-      INNER JOIN [BRIT].[Reference_GP_Practice] B 
-      ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
-      INNER JOIN [BRIT].[patient_link] pl 
-      ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN 
-(
-SELECT [FK_Patient_Link_ID]
-      ,[EventDate]
-      ,[Value] AS BMI
-  FROM [BRIT].[GP_Events] E
-    INNER JOIN [BRIT].[Reference_SnomedCT] R
-        ON E.FK_Reference_SnomedCT_ID = R.PK_Reference_SnomedCT_ID
-  WHERE R.ConceptID IN (
-     '60621009'
-    ,'140075008'
-    ,'162859006'
-    ,'363807006')
-    ) AS BMI_TABLE ON BMI_TABLE.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-
+        WHERE R.ConceptID IN (
+            '60621009',
+            '140075008',
+            '162859006',
+            '363807006'
+        )
+    ) AS BMI_TABLE
+      ON BMI_TABLE.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
 ),
-adult_patients AS (
-  SELECT 
+
+most_recent_bmi AS (
+  SELECT
     PK_Patient_ID,
     prac_code,
     prac_name,
     region,
-    EventDate,
-    MAX(BMI) AS BMI
+    MAX(EventDate) AS EventDate
   FROM patient_ages
-  WHERE age >= 18 AND BMI IS NOT NULL AND BMI >= 10 AND BMI <= 70
-GROUP BY 
-    PK_Patient_ID,
-    prac_code,
-    prac_name,
-    region,
-    EventDate
-)
-INSERT INTO PerPracticeData(prac_code,prac_name,region,bmi_num)
-  SELECT
-    prac_code,
-    prac_name,
-    region,
-    COUNT(*) AS bmi_num
-  FROM adult_patients
-  GROUP BY prac_code,prac_name,region
-  ORDER BY prac_code,prac_name,region
-;
-
-------------
--- smoke_nev  
--- Most recent record 
--- Number of adult patients who never smoked using the most recent record.
-------------
-
-WITH patient_ages AS (
-  SELECT
-    PK_Patient_ID,
-    med.FK_Patient_Link_ID,
-    OrganisationCode AS prac_code,
-    B.Name AS prac_name,
-    Region AS region,
-    DATEDIFF(YEAR, dob, '2024-05-01') 
-      - CASE 
-          WHEN MONTH(dob) > 5 OR (MONTH(dob) = 5 AND DAY(dob) > 1) THEN 1 
-          ELSE 0 
-        END AS age
-  FROM 
-      [BRIT].[Patient] A 
-      INNER JOIN [BRIT].[Reference_GP_Practice] B 
-      ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
-      INNER JOIN [BRIT].[patient_link] pl 
-      ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.GP_Events med  
-      ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.Reference_SnomedCT snomed
-      ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
-  WHERE
-    snomed.ConceptID IN ('266919005',
-'221000119102',
-'129570009',
-'505681000000109',
-'702979003',
-'228512004')
+  GROUP BY PK_Patient_ID, prac_code, prac_name, region
 ),
+
 adult_patients AS (
-  SELECT *
-  FROM patient_ages
-  WHERE age >= 18
+  SELECT DISTINCT
+    A.PK_Patient_ID,
+    A.prac_code,
+    A.prac_name,
+    A.region,
+    A.BMI
+  FROM patient_ages A
+    INNER JOIN most_recent_bmi B
+      ON A.PK_Patient_ID = B.PK_Patient_ID
+      AND A.prac_code   = B.prac_code
+      AND A.prac_name   = B.prac_name
+      AND A.region      = B.region
+      AND A.EventDate   = B.EventDate
+  WHERE 
+    A.age >= 18
+    AND A.BMI BETWEEN 10 AND 70
 )
-INSERT INTO PerPracticeData(prac_code,prac_name,region,smoke_nev)
-  SELECT
-    prac_code,
-    prac_name,
-    region,
-    COUNT(DISTINCT PK_Patient_ID) AS smoke_nev
-  FROM adult_patients
-  GROUP BY prac_code,prac_name,region
-  ORDER BY prac_code,prac_name,region
+
+INSERT INTO PerPracticeData(prac_code, prac_name, region, bmi_mean)
+SELECT
+  prac_code,
+  prac_name,
+  region,
+  AVG(BMI) AS bmi_mean
+FROM adult_patients
+GROUP BY prac_code, prac_name, region
 ;
 
 ------------
@@ -56515,7 +56484,7 @@ INSERT INTO PerPracticeData(prac_code,prac_name,region,ab_uti_bl)
 ;
 
 ------------
--- ab_cough_bl_calcs           
+-- ab_cough_bl
 -- Baseline            
 -- Number of AB prescriptions given to adult patients for cough during baseline year
 ------------
@@ -63746,12 +63715,12 @@ adult_patients AS (
   FROM patient_ages
   WHERE age >= 18
 )
-INSERT INTO PerPracticeData(prac_code,prac_name,region,ab_cough_bl_calcs)
+INSERT INTO PerPracticeData(prac_code,prac_name,region,ab_cough_bl)
   SELECT
     prac_code,
     prac_name,
     region,
-    COUNT(FK_Patient_Link_ID) AS ab_cough_bl_calcs
+    COUNT(FK_Patient_Link_ID) AS ab_cough_bl
   FROM adult_patients
   GROUP BY prac_code,prac_name,region
   ORDER BY prac_code,prac_name,region
@@ -71023,7 +70992,7 @@ INSERT INTO PerPracticeData(prac_code,prac_name,region,ab_throat_bl)
 ;
 
 ------------
--- ab_media_bl_calcs           
+-- ab_media_bl
 -- Baseline            
 -- Number of AB prescriptions given to adult patients for otitis media during baseline year
 ------------
@@ -78274,12 +78243,12 @@ adult_patients AS (
   FROM patient_ages
   WHERE age >= 18
 )
-INSERT INTO PerPracticeData(prac_code,prac_name,region,ab_media_bl_calcs)
+INSERT INTO PerPracticeData(prac_code,prac_name,region,ab_media_bl)
   SELECT
     prac_code,
     prac_name,
     region,
-    COUNT(FK_Patient_Link_ID) AS ab_media_bl_calcs
+    COUNT(FK_Patient_Link_ID) AS ab_media_bl
   FROM adult_patients
   GROUP BY prac_code,prac_name,region
   ORDER BY prac_code,prac_name,region
@@ -92820,7 +92789,7 @@ WITH patient_ages AS (
       INNER JOIN BRIT.GP_Medications med_2
       ON med_2.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
-    med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
+    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME)
     AND snomed.ConceptID IN ('68226007',
 '38822007',
 '275412000',
@@ -100074,7 +100043,7 @@ WITH patient_ages AS (
       INNER JOIN BRIT.GP_Medications med_2
       ON med_2.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
-    med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
+    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME) 
     AND snomed.ConceptID IN ('161929000',
 '28743005',
 '272039006',
@@ -107317,7 +107286,7 @@ WITH patient_ages AS (
       INNER JOIN BRIT.GP_Medications med_2
       ON med_2.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
-    med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
+    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME)
     AND snomed.ConceptID IN ('195658003',
 '195671000',
 '195669000',
@@ -114582,7 +114551,7 @@ WITH patient_ages AS (
       INNER JOIN BRIT.GP_Medications med_2
       ON med_2.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
-    med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
+    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME)
     AND snomed.ConceptID IN ('194290005',
 '7271000119107',
 '194288009',
@@ -121844,7 +121813,7 @@ WITH patient_ages AS (
       INNER JOIN BRIT.GP_Medications med_2
       ON med_2.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
-    med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
+    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME)
     AND snomed.ConceptID IN ('232212002',
 '54272002',
 '56663002',
@@ -129100,7 +129069,7 @@ WITH patient_ages AS (
       INNER JOIN BRIT.GP_Medications med_2
       ON med_2.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
-    med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
+    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME) 
     AND snomed.ConceptID IN ('67832005',
 '91038008',
 '68272006',
@@ -136317,246 +136286,248 @@ INSERT INTO PerPracticeData(prac_code,prac_name,region,ab_sinus_12m)
   ORDER BY prac_code,prac_name,region
 ;
 
-
-
 ----------------------
 -- AGGREGATE RESULTS
 ----------------------
 
+TRUNCATE TABLE PerPracticeDataFinal;
+
 INSERT INTO PerPracticeDataFinal
 (
-prac_code,
-prac_name,
-prac_group,
-region,
-all_pats_12m  ,
-tot_pats_12m  ,
-age_mean  ,
-age_num ,
-age_mean_ci ,
-age_num_ci  ,
-age_subgrp  ,
-age_uti ,
-age_cough ,
-age_throat  ,
-age_media ,
-age_externa ,
-age_sinus ,
-sex_male  ,
-sex_fem ,
-sex_male_ci ,
-sex_fem_ci  ,
-sex_m_uti ,
-sex_f_uti ,
-sex_m_cough ,
-sex_f_cough ,
-sex_m_throat  ,
-sex_f_throat  ,
-sex_m_media ,
-sex_f_media ,
-sex_m_externa ,
-sex_f_externa ,
-sex_m_sinus ,
-sex_f_sinus ,
-ethnic_white  ,
-ethnic_black  ,
-ethnic_asian  ,
-ethnic_mixed  ,
-ethnic_other  ,
-ethnic_unknown  ,
-imd_median  ,
-imd_num ,
-imd_most_dep  ,
-imd_dep ,
-imd_mid ,
-imd_aff ,
-imd_most_aff  ,
-imd_subgrp  ,
-cci_mean  ,
-cci_num ,
-cci_mean_ci ,
-cci_num_ci  ,
-cci_mean_uti  ,
-cci_mean_cough  ,
-cci_mean_throat ,
-cci_mean_media  ,
-cci_mean_externa  ,
-cci_mean_sinus  ,
-consult_bl  ,
-consult_12m ,
-ab_presc_bl ,
-ab_pat_bl ,
-ab_count_bl ,
-ab_presc_12m  ,
-ab_pat_12m  ,
-ab_count_12m  ,
-infect_uti_bl ,
-infect_cough_bl ,
-infect_throat_bl  ,
-infect_media_bl ,
-infect_externa_bl ,
-infect_sinus_bl ,
-infect_total_bl ,
-infect_uti_12m  ,
-ab_cough_bl_calcs ,
-ab_media_bl_calcs ,
-infect_cough_12m  ,
-infect_throat_12m ,
-infect_media_12m  ,
-infect_externa_12m  ,
-infect_sinus_12m  ,
-infect_total_12m  ,
-ircomp_bl ,
-ircomp_12m  ,
-risk_uti_12m  ,
-risk_cough_12m  ,
-risk_throat_12m ,
-risk_media_12m  ,
-risk_externa_12m  ,
-risk_sinus_12m  ,
-risk_mean_12m ,
-bmi_mean  ,
-bmi_num ,
-smoke_nev ,
-smoke_ex  ,
-smoke_cur ,
-smoke_unk ,
-frail_modsev  ,
-frail_fitmild ,
-flu_vac ,
-season_aut  ,
-season_win  ,
-season_spr  ,
-season_sum  ,
-ab_uti_bl  ,
-ab_cough_bl  ,
-ab_throat_bl  ,
-ab_media_bl  ,
-ab_externa_bl  ,
-ab_sinus_bl  ,
-ab_uti_12m  ,
-ab_cough_12m  ,
-ab_throat_12m  ,
-ab_media_12m  ,
-ab_externa_12m  ,
-ab_sinus_12m  
+    prac_code,
+    prac_name,
+    prac_group,
+    region,
+    all_pats_12m,
+    tot_pats_12m,
+    age_mean,
+    age_num,
+    age_mean_ci,
+    age_num_ci,
+    age_subgrp,
+    age_uti,
+    age_cough,
+    age_throat,
+    age_media,
+    age_externa,
+    age_sinus,
+    sex_male,
+    sex_fem,
+    sex_male_ci,
+    sex_fem_ci,
+    sex_m_uti,
+    sex_f_uti,
+    sex_m_cough,
+    sex_f_cough,
+    sex_m_throat,
+    sex_f_throat,
+    sex_m_media,
+    sex_f_media,
+    sex_m_externa,
+    sex_f_externa,
+    sex_m_sinus,
+    sex_f_sinus,
+    ethnic_white,
+    ethnic_black,
+    ethnic_asian,
+    ethnic_mixed,
+    ethnic_other,
+    ethnic_unknown,
+    imd_median,
+    imd_num,
+    imd_most_dep,
+    imd_dep,
+    imd_mid,
+    imd_aff,
+    imd_most_aff,
+    imd_subgrp,
+    cci_mean,
+    cci_num,
+    cci_mean_ci,
+    cci_num_ci,
+    cci_mean_uti,
+    cci_mean_cough,
+    cci_mean_throat,
+    cci_mean_media,
+    cci_mean_externa,
+    cci_mean_sinus,
+    consult_bl,
+    consult_12m,
+    ab_presc_bl,
+    ab_pat_bl,
+    ab_count_bl,
+    ab_uti_bl,
+    ab_cough_bl,
+    ab_throat_bl,
+    ab_media_bl,
+    ab_externa_bl,
+    ab_sinus_bl,
+    ab_presc_12m,
+    ab_pat_12m,
+    ab_count_12m,
+    ab_uti_12m,
+    ab_cough_12m,
+    ab_throat_12m,
+    ab_media_12m,
+    ab_externa_12m,
+    ab_sinus_12m,
+    infect_uti_bl,
+    infect_cough_bl,
+    infect_throat_bl,
+    infect_media_bl,
+    infect_externa_bl,
+    infect_sinus_bl,
+    infect_total_bl,
+    infect_uti_12m,
+    infect_cough_12m,
+    infect_throat_12m,
+    infect_media_12m,
+    infect_externa_12m,
+    infect_sinus_12m,
+    infect_total_12m,
+    ircomp_bl,
+    ircomp_12m,
+    risk_uti_12m,
+    risk_cough_12m,
+    risk_throat_12m,
+    risk_media_12m,
+    risk_externa_12m,
+    risk_sinus_12m,
+    risk_mean_12m,
+    bmi_mean,
+    bmi_num,
+    smoke_nev,
+    smoke_ex,
+    smoke_cur,
+    smoke_unk,
+    frail_modsev,
+    frail_fitmild,
+    flu_vac,
+    season_aut,
+    season_win,
+    season_spr,
+    season_sum,
+    prac_merge,
+    prac_wd,
+    date_wd
 )
 SELECT
     prac_code,
     prac_name,
     NULL AS prac_group,
     region,
-    sum(  all_pats_12m  )   as    all_pats_12m  ,
-    sum(  tot_pats_12m  )   as    tot_pats_12m  ,
-    sum(  age_mean  )   as    age_mean  ,
-    sum(  age_num )   as    age_num ,
-    sum(  age_mean_ci )   as    age_mean_ci ,
-    sum(  age_num_ci  )   as    age_num_ci  ,
-    sum(  age_subgrp  )   as    age_subgrp  ,
-    sum(  age_uti )   as    age_uti ,
-    sum(  age_cough )   as    age_cough ,
-    sum(  age_throat  )   as    age_throat  ,
-    sum(  age_media )   as    age_media ,
-    sum(  age_externa )   as    age_externa ,
-    sum(  age_sinus )   as    age_sinus ,
-    sum(  sex_male  )   as    sex_male  ,
-    sum(  sex_fem )   as    sex_fem ,
-    sum(  sex_male_ci )   as    sex_male_ci ,
-    sum(  sex_fem_ci  )   as    sex_fem_ci  ,
-    sum(  sex_m_uti )   as    sex_m_uti ,
-    sum(  sex_f_uti )   as    sex_f_uti ,
-    sum(  sex_m_cough )   as    sex_m_cough ,
-    sum(  sex_f_cough )   as    sex_f_cough ,
-    sum(  sex_m_throat  )   as    sex_m_throat  ,
-    sum(  sex_f_throat  )   as    sex_f_throat  ,
-    sum(  sex_m_media )   as    sex_m_media ,
-    sum(  sex_f_media )   as    sex_f_media ,
-    sum(  sex_m_externa )   as    sex_m_externa ,
-    sum(  sex_f_externa )   as    sex_f_externa ,
-    sum(  sex_m_sinus )   as    sex_m_sinus ,
-    sum(  sex_f_sinus )   as    sex_f_sinus ,
-    sum(  ethnic_white  )   as    ethnic_white  ,
-    sum(  ethnic_black  )   as    ethnic_black  ,
-    sum(  ethnic_asian  )   as    ethnic_asian  ,
-    sum(  ethnic_mixed  )   as    ethnic_mixed  ,
-    sum(  ethnic_other  )   as    ethnic_other  ,
-    sum(  ethnic_unknown  )   as    ethnic_unknown  ,
-    sum(  imd_median  )   as    imd_median  ,
-    sum(  imd_num )   as    imd_num ,
-    sum(  imd_most_dep  )   as    imd_most_dep  ,
-    sum(  imd_dep )   as    imd_dep ,
-    sum(  imd_mid )   as    imd_mid ,
-    sum(  imd_aff )   as    imd_aff ,
-    sum(  imd_most_aff  )   as    imd_most_aff  ,
-    sum(  imd_subgrp  )   as    imd_subgrp  ,
-    sum(  cci_mean  )   as    cci_mean  ,
-    sum(  cci_num )   as    cci_num ,
-    sum(  cci_mean_ci )   as    cci_mean_ci ,
-    sum(  cci_num_ci  )   as    cci_num_ci  ,
-    sum(  cci_mean_uti  )   as    cci_mean_uti  ,
-    sum(  cci_mean_cough  )   as    cci_mean_cough  ,
-    sum(  cci_mean_throat )   as    cci_mean_throat ,
-    sum(  cci_mean_media  )   as    cci_mean_media  ,
-    sum(  cci_mean_externa  )   as    cci_mean_externa  ,
-    sum(  cci_mean_sinus  )   as    cci_mean_sinus  ,
-    sum(  consult_bl  )   as    consult_bl  ,
-    sum(  consult_12m )   as    consult_12m ,
-    sum(  ab_presc_bl )   as    ab_presc_bl ,
-    sum(  ab_pat_bl )   as    ab_pat_bl ,
-    sum(  ab_count_bl )   as    ab_count_bl ,
-    sum(  ab_presc_12m  )   as    ab_presc_12m  ,
-    sum(  ab_pat_12m  )   as    ab_pat_12m  ,
-    sum(  ab_count_12m  )   as    ab_count_12m  ,
-    sum(  infect_uti_bl )   as    infect_uti_bl ,
-    sum(  ab_cough_bl_calcs ) as    ab_cough_bl_calcs ,
-    sum(  ab_media_bl_calcs  ) as ab_media_bl_calcs  ,
-    sum(  infect_cough_bl )   as    infect_cough_bl ,
-    sum(  infect_throat_bl  )   as    infect_throat_bl  ,
-    sum(  infect_media_bl )   as    infect_media_bl ,
-    sum(  infect_externa_bl )   as    infect_externa_bl ,
-    sum(  infect_sinus_bl )   as    infect_sinus_bl ,
-    sum(  infect_total_bl )   as    infect_total_bl ,
-    sum(  infect_uti_12m  )   as    infect_uti_12m  ,
-    sum(  infect_cough_12m  )   as    infect_cough_12m  ,
-    sum(  infect_throat_12m )   as    infect_throat_12m ,
-    sum(  infect_media_12m  )   as    infect_media_12m  ,
-    sum(  infect_externa_12m  )   as    infect_externa_12m  ,
-    sum(  infect_sinus_12m  )   as    infect_sinus_12m  ,
-    sum(  infect_total_12m  )   as    infect_total_12m  ,
-    sum(  ircomp_bl )   as    ircomp_bl ,
-    sum(  ircomp_12m  )   as    ircomp_12m  ,
-    sum(  risk_uti_12m  )   as    risk_uti_12m  ,
-    sum(  risk_cough_12m  )   as    risk_cough_12m  ,
-    sum(  risk_throat_12m )   as    risk_throat_12m ,
-    sum(  risk_media_12m  )   as    risk_media_12m  ,
-    sum(  risk_externa_12m  )   as    risk_externa_12m  ,
-    sum(  risk_sinus_12m  )   as    risk_sinus_12m  ,
-    sum(  risk_mean_12m )   as    risk_mean_12m ,
-    sum(  bmi_mean  )   as    bmi_mean  ,
-    sum(  bmi_num )   as    bmi_num ,
-    sum(  smoke_nev )   as    smoke_nev ,
-    sum(  smoke_ex  )   as    smoke_ex  ,
-    sum(  smoke_cur )   as    smoke_cur ,
-    sum(  smoke_unk )   as    smoke_unk ,
-    sum(  frail_modsev  )   as    frail_modsev  ,
-    sum(  frail_fitmild )   as    frail_fitmild ,
-    sum(  flu_vac )   as    flu_vac ,
-    sum(  season_aut  )   as    season_aut  ,
-    sum(  season_win  )   as    season_win  ,
-    sum(  season_spr  )   as    season_spr  ,
-    sum(  season_sum  )   as    season_sum  ,
-    sum( ab_uti_bl )      as ab_uti_bl  ,
-    sum( ab_cough_bl )    as ab_cough_bl  ,
-    sum( ab_throat_bl )   as ab_throat_bl  ,
-    sum( ab_media_bl )    as ab_media_bl  ,
-    sum( ab_externa_bl )  as ab_externa_bl  ,
-    sum( ab_sinus_bl )    as ab_sinus_bl  ,
-    sum( ab_uti_12m )     as ab_uti_12m  ,
-    sum( ab_cough_12m )   as ab_cough_12m  ,
-    sum( ab_throat_12m )  as ab_throat_12m  ,
-    sum( ab_media_12m )   as ab_media_12m  ,
-    sum( ab_externa_12m ) as ab_externa_12m  ,
-    sum( ab_sinus_12m )   as ab_sinus_12m
+    SUM(all_pats_12m),
+    SUM(tot_pats_12m),
+    SUM(age_mean),
+    SUM(age_num),
+    SUM(age_mean_ci),
+    SUM(age_num_ci),
+    SUM(age_subgrp),
+    SUM(age_uti),
+    SUM(age_cough),
+    SUM(age_throat),
+    SUM(age_media),
+    SUM(age_externa),
+    SUM(age_sinus),
+    SUM(sex_male),
+    SUM(sex_fem),
+    SUM(sex_male_ci),
+    SUM(sex_fem_ci),
+    SUM(sex_m_uti),
+    SUM(sex_f_uti),
+    SUM(sex_m_cough),
+    SUM(sex_f_cough),
+    SUM(sex_m_throat),
+    SUM(sex_f_throat),
+    SUM(sex_m_media),
+    SUM(sex_f_media),
+    SUM(sex_m_externa),
+    SUM(sex_f_externa),
+    SUM(sex_m_sinus),
+    SUM(sex_f_sinus),
+    SUM(ethnic_white),
+    SUM(ethnic_black),
+    SUM(ethnic_asian),
+    SUM(ethnic_mixed),
+    SUM(ethnic_other),
+    SUM(ethnic_unknown),
+    SUM(imd_median),
+    SUM(imd_num),
+    SUM(imd_most_dep),
+    SUM(imd_dep),
+    SUM(imd_mid),
+    SUM(imd_aff),
+    SUM(imd_most_aff),
+    SUM(imd_subgrp),
+    SUM(cci_mean),
+    SUM(cci_num),
+    SUM(cci_mean_ci),
+    SUM(cci_num_ci),
+    SUM(cci_mean_uti),
+    SUM(cci_mean_cough),
+    SUM(cci_mean_throat),
+    SUM(cci_mean_media),
+    SUM(cci_mean_externa),
+    SUM(cci_mean_sinus),
+    SUM(consult_bl),
+    SUM(consult_12m),
+    SUM(ab_presc_bl),
+    SUM(ab_pat_bl),
+    SUM(ab_count_bl),
+    SUM(ab_uti_bl),
+    SUM(ab_cough_bl),
+    SUM(ab_throat_bl),
+    SUM(ab_media_bl),
+    SUM(ab_externa_bl),
+    SUM(ab_sinus_bl),
+    SUM(ab_presc_12m),
+    SUM(ab_pat_12m),
+    SUM(ab_count_12m),
+    SUM(ab_uti_12m),
+    SUM(ab_cough_12m),
+    SUM(ab_throat_12m),
+    SUM(ab_media_12m),
+    SUM(ab_externa_12m),
+    SUM(ab_sinus_12m),
+    SUM(infect_uti_bl),
+    SUM(infect_cough_bl),
+    SUM(infect_throat_bl),
+    SUM(infect_media_bl),
+    SUM(infect_externa_bl),
+    SUM(infect_sinus_bl),
+    SUM(infect_total_bl),
+    SUM(infect_uti_12m),
+    SUM(infect_cough_12m),
+    SUM(infect_throat_12m),
+    SUM(infect_media_12m),
+    SUM(infect_externa_12m),
+    SUM(infect_sinus_12m),
+    SUM(infect_total_12m),
+    SUM(ircomp_bl),
+    SUM(ircomp_12m),
+    SUM(risk_uti_12m),
+    SUM(risk_cough_12m),
+    SUM(risk_throat_12m),
+    SUM(risk_media_12m),
+    SUM(risk_externa_12m),
+    SUM(risk_sinus_12m),
+    SUM(risk_mean_12m),
+    SUM(bmi_mean),
+    SUM(bmi_num),
+    SUM(smoke_nev),
+    SUM(smoke_ex),
+    SUM(smoke_cur),
+    SUM(smoke_unk),
+    SUM(frail_modsev),
+    SUM(frail_fitmild),
+    SUM(flu_vac),
+    SUM(season_aut),
+    SUM(season_win),
+    SUM(season_spr),
+    SUM(season_sum),
+    SUM(prac_merge),
+    SUM(prac_wd),
+    SUM(date_wd)
 FROM PerPracticeData
-GROUP BY prac_code,prac_name,region
-ORDER BY prac_code,prac_name,region;
+GROUP BY prac_code, prac_name, region
+ORDER BY prac_code, prac_name, region;
