@@ -2975,6 +2975,1030 @@ INSERT INTO PerPracticeData(prac_code, prac_name, region, imd_subgrp)
   GROUP BY prac_code, prac_name, region
 ;
 
+--------------------
+-- cci_mean
+-- Most recent record
+-- Mean Charlson Comorbidity Index of adult patients using most recent record
+--------------------
+
+WITH patient_ages AS (
+  SELECT
+    A.PK_Patient_ID,
+    B.OrganisationCode AS prac_code,
+    B.Name AS prac_name,
+    B.Region AS region,
+    DATEDIFF(YEAR, A.dob, '2024-05-01')
+      - CASE
+          WHEN MONTH(A.dob) > 5 OR (MONTH(A.dob) = 5 AND DAY(A.dob) > 1) THEN 1
+          ELSE 0
+        END AS age
+  FROM BRIT.Patient A
+  INNER JOIN BRIT.Reference_GP_Practice B
+    ON B.PK_Reference_GP_Practice_ID = A.FK_Reference_GP_Practice_ID
+),
+adult_patients AS (
+  SELECT PK_Patient_ID, prac_code, prac_name, region, MAX(age) AS age
+  FROM patient_ages
+  WHERE age >= 18
+  GROUP BY PK_Patient_ID, prac_code, prac_name, region
+),
+adult_with_cci AS (
+  SELECT
+    ap.PK_Patient_ID,
+    ap.prac_code,
+    ap.prac_name,
+    ap.region,
+    cci.CCI_Score
+  FROM adult_patients ap
+  INNER JOIN BRIT.PerPatientCCIScore cci
+    ON cci.PK_Patient_ID = ap.PK_Patient_ID
+)
+INSERT INTO PerPracticeData (prac_code, prac_name, region, cci_mean)
+SELECT
+  prac_code,
+  prac_name,
+  region,
+  AVG(CAST(CCI_Score AS FLOAT)) AS cci_mean
+FROM adult_with_cci
+GROUP BY prac_code, prac_name, region
+ORDER BY prac_code, prac_name, region;
+
+--------------------
+-- cci_num
+-- Most recent record
+-- Number of adult patients with a Charlson Comorbidity Index score
+--------------------
+
+WITH patient_ages AS (
+  SELECT
+    A.PK_Patient_ID,
+    B.OrganisationCode AS prac_code,
+    B.Name AS prac_name,
+    B.Region AS region,
+    DATEDIFF(YEAR, A.dob, '2024-05-01')
+      - CASE
+          WHEN MONTH(A.dob) > 5 OR (MONTH(A.dob) = 5 AND DAY(A.dob) > 1) THEN 1
+          ELSE 0
+        END AS age
+  FROM BRIT.Patient A
+  INNER JOIN BRIT.Reference_GP_Practice B
+    ON B.PK_Reference_GP_Practice_ID = A.FK_Reference_GP_Practice_ID
+),
+adult_patients AS (
+  SELECT PK_Patient_ID, prac_code, prac_name, region, MAX(age) AS age
+  FROM patient_ages
+  WHERE age >= 18
+  GROUP BY PK_Patient_ID, prac_code, prac_name, region
+),
+adult_with_cci AS (
+  SELECT
+    ap.PK_Patient_ID,
+    ap.prac_code,
+    ap.prac_name,
+    ap.region,
+    cci.CCI_Score
+  FROM adult_patients ap
+  INNER JOIN BRIT.PerPatientCCIScore cci
+    ON cci.PK_Patient_ID = ap.PK_Patient_ID
+)
+INSERT INTO PerPracticeData (prac_code, prac_name, region, cci_num)
+SELECT
+  prac_code,
+  prac_name,
+  region,
+  COUNT(DISTINCT PK_Patient_ID) AS cci_num
+FROM adult_with_cci
+GROUP BY prac_code, prac_name, region
+ORDER BY prac_code, prac_name, region;
+
+--------------------
+-- cci_mean_ci
+-- Baseline  
+-- Mean Charlson Comorbidity Index of adult patients from GP practice with a common infection using most recent record
+--------------------
+
+WITH patient_ci AS (
+  SELECT
+    A.PK_Patient_ID,
+    med.FK_Patient_Link_ID,
+    OrganisationCode AS prac_code,
+    B.Name AS prac_name,
+    Region AS region,
+    DATEDIFF(YEAR, dob, '2024-05-01') 
+      - CASE 
+          WHEN MONTH(dob) > 5 OR (MONTH(dob) = 5 AND DAY(dob) > 1) THEN 1 
+          ELSE 0 
+        END AS age
+  FROM 
+      [BRIT].[Patient] A 
+      INNER JOIN [BRIT].[Reference_GP_Practice] B 
+      ON B.PK_Reference_GP_Practice_ID = A.FK_Reference_GP_Practice_ID 
+      INNER JOIN [BRIT].[patient_link] pl 
+      ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+      INNER JOIN BRIT.GP_Events med  
+      ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+      INNER JOIN BRIT.Reference_SnomedCT snomed
+      ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
+  WHERE
+    med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
+    AND snomed.ConceptID IN (
+      '161929000',
+      '28743005',
+      '272039006',
+      '49727002',
+      '961781000006103',
+      '135883003',
+      '11833005',
+      '284523002',
+      '161923004',
+      '161924005',
+      '161925006',
+      '27836007',
+      '232212002',
+      '54272002',
+      '56663002',
+      '267665002',
+      '30250000',
+      '45855004',
+      '232214001',
+      '402699002',
+      '76583009',
+      '403432008',
+      '403433003',
+      '232224009',
+      '45431004',
+      '95812002',
+      '194202008',
+      '194204009',
+      '33934002',
+      '194203003',
+      '402697000',
+      '86981007',
+      '111856000',
+      '21954000',
+      '3135009',
+      '575931000000108',
+      '34129005',
+      '67832005',
+      '91038008',
+      '68272006',
+      '431231008',
+      '15805002',
+      '77919000',
+      '35923002',
+      '73237007',
+      '60130002',
+      '88850006',
+      '40055000',
+      '897657000',
+      '78737005',
+      '88348008',
+      '195790000',
+      '195788001',
+      '36971009',
+      '68226007',
+      '38822007',
+      '275412000',
+      '267204006',
+      '199107005',
+      '199106001',
+      '199108000',
+      '199109008',
+      '199110003',
+      '197926005',
+      '197853008',
+      '197927001',
+      '314940005',
+      '68566005',
+      '74741000006107',
+      '368991000119100',
+      '301011002',
+      '1',
+      '369001000119100',
+      '369011000119102',
+      '307534009',
+      '609491002',
+      '199111004',
+      '61373006',
+      '194290005',
+      '7271000119107',
+      '194288009',
+      '52353000',
+      '1088061000119105',
+      '1090681000119105',
+      '359609001',
+      '194240006',
+      '270490007',
+      '194289001',
+      '77478005',
+      '194281003',
+      '14948001',
+      '86279000',
+      '194282005',
+      '49252004',
+      '194286008',
+      '267756004',
+      '29350000',
+      '129127001',
+      '270491006',
+      '78868004',
+      '275481002',
+      '194237006',
+      '164236006',
+      '65363002',
+      '81564005',
+      '13420004',
+      '39288006',
+      '194287004',
+      '80327007',
+      '195658003',
+      '195671000',
+      '195669000',
+      '195666007',
+      '195667003',
+      '399050001',
+      '363746003',
+      '195656004',
+      '195673002',
+      '17741008',
+      '195657008',
+      '195668008',
+      '195803003',
+      '41188003',
+      '162388002',
+      '195804009',
+      '164256007',
+      '162397003',
+      '15033003',
+      '405737000',
+      '195677001',
+      '267102003',
+      '538331000000101',
+      '43878008',
+      '85769006',
+      '186357007',
+      '41582007',
+      '90176007',
+      '300932000',
+      '186963008',
+      '232427004',
+      '173599005',
+      '232417005',
+      '195662009'
+    )
+),
+adult_patients AS (
+  SELECT 
+    PK_Patient_ID,
+    prac_code,
+    prac_name,
+    region,
+    MAX(age) AS age
+  FROM patient_ci
+  WHERE age >= 18
+  GROUP BY PK_Patient_ID, prac_code, prac_name, region
+),
+adult_patients_with_cci AS (
+  SELECT
+    ap.PK_Patient_ID,
+    ap.prac_code,
+    ap.prac_name,
+    ap.region,
+    cci.CCI_Score
+  FROM adult_patients ap
+  INNER JOIN BRIT.PerPatientCCIScore cci
+    ON cci.PK_Patient_ID = ap.PK_Patient_ID
+)
+INSERT INTO PerPracticeData(prac_code, prac_name, region, cci_mean_ci)
+SELECT
+  prac_code,
+  prac_name,
+  region,
+  AVG(CAST(CCI_Score AS FLOAT)) AS cci_mean_ci
+FROM adult_patients_with_cci
+GROUP BY prac_code, prac_name, region
+ORDER BY prac_code, prac_name, region
+;
+
+--------------------
+-- cci_num_ci
+-- Baseline  
+-- Number of adult patients from GP practice with a common infection and a Charlson Comorbidity Index score
+--------------------
+
+WITH patient_ci AS (
+  SELECT
+    A.PK_Patient_ID,
+    med.FK_Patient_Link_ID,
+    OrganisationCode AS prac_code,
+    B.Name AS prac_name,
+    Region AS region,
+    DATEDIFF(YEAR, dob, '2024-05-01') 
+      - CASE 
+          WHEN MONTH(dob) > 5 OR (MONTH(dob) = 5 AND DAY(dob) > 1) THEN 1 
+          ELSE 0 
+        END AS age
+  FROM 
+      [BRIT].[Patient] A 
+      INNER JOIN [BRIT].[Reference_GP_Practice] B 
+      ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
+      INNER JOIN [BRIT].[patient_link] pl 
+      ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+      INNER JOIN BRIT.GP_Events med  
+      ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+      INNER JOIN BRIT.Reference_SnomedCT snomed
+      ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
+  WHERE
+    med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
+    AND snomed.ConceptID IN (
+      '161929000',
+      '28743005',
+      '272039006',
+      '49727002',
+      '961781000006103',
+      '135883003',
+      '11833005',
+      '284523002',
+      '161923004',
+      '161924005',
+      '161925006',
+      '27836007',
+      '232212002',
+      '54272002',
+      '56663002',
+      '267665002',
+      '30250000',
+      '45855004',
+      '232214001',
+      '402699002',
+      '76583009',
+      '403432008',
+      '403433003',
+      '232224009',
+      '45431004',
+      '95812002',
+      '194202008',
+      '194204009',
+      '33934002',
+      '194203003',
+      '402697000',
+      '86981007',
+      '111856000',
+      '21954000',
+      '3135009',
+      '575931000000108',
+      '34129005',
+      '67832005',
+      '91038008',
+      '68272006',
+      '431231008',
+      '15805002',
+      '77919000',
+      '35923002',
+      '73237007',
+      '60130002',
+      '88850006',
+      '40055000',
+      '897657000',
+      '78737005',
+      '88348008',
+      '195790000',
+      '195788001',
+      '36971009',
+      '68226007',
+      '38822007',
+      '275412000',
+      '267204006',
+      '199107005',
+      '199106001',
+      '199108000',
+      '199109008',
+      '199110003',
+      '197926005',
+      '197853008',
+      '197927001',
+      '314940005',
+      '68566005',
+      '74741000006107',
+      '368991000119100',
+      '301011002',
+      '1',
+      '369001000119100',
+      '369011000119102',
+      '307534009',
+      '609491002',
+      '199111004',
+      '61373006',
+      '194290005',
+      '7271000119107',
+      '194288009',
+      '52353000',
+      '1088061000119105',
+      '1090681000119105',
+      '359609001',
+      '194240006',
+      '270490007',
+      '194289001',
+      '77478005',
+      '194281003',
+      '14948001',
+      '86279000',
+      '194282005',
+      '49252004',
+      '194286008',
+      '267756004',
+      '29350000',
+      '129127001',
+      '270491006',
+      '78868004',
+      '275481002',
+      '194237006',
+      '164236006',
+      '65363002',
+      '81564005',
+      '13420004',
+      '39288006',
+      '194287004',
+      '80327007',
+      '195658003',
+      '195671000',
+      '195669000',
+      '195666007',
+      '195667003',
+      '399050001',
+      '363746003',
+      '195656004',
+      '195673002',
+      '17741008',
+      '195657008',
+      '195668008',
+      '195803003',
+      '41188003',
+      '162388002',
+      '195804009',
+      '164256007',
+      '162397003',
+      '15033003',
+      '405737000',
+      '195677001',
+      '267102003',
+      '538331000000101',
+      '43878008',
+      '85769006',
+      '186357007',
+      '41582007',
+      '90176007',
+      '300932000',
+      '186963008',
+      '232427004',
+      '173599005',
+      '232417005',
+      '195662009'
+    )
+),
+adult_patients AS (
+  SELECT 
+    PK_Patient_ID,
+    prac_code,
+    prac_name,
+    region,
+    MAX(age) AS age
+  FROM patient_ci
+  WHERE age >= 18
+  GROUP BY PK_Patient_ID, prac_code, prac_name, region
+),
+adult_ci_with_cci AS (
+  SELECT
+    ap.PK_Patient_ID,
+    ap.prac_code,
+    ap.prac_name,
+    ap.region
+  FROM adult_patients ap
+  INNER JOIN BRIT.PerPatientCCIScore cci
+    ON cci.PK_Patient_ID = ap.PK_Patient_ID
+)
+INSERT INTO PerPracticeData(prac_code, prac_name, region, cci_num_ci)
+SELECT
+  prac_code,
+  prac_name,
+  region,
+  COUNT(DISTINCT PK_Patient_ID) AS cci_num_ci
+FROM adult_ci_with_cci
+GROUP BY prac_code, prac_name, region
+ORDER BY prac_code, prac_name, region
+;
+
+--------------------
+-- cci_mean_uti
+-- Most recent record
+-- Mean Charlson Comorbidity Index of adult patients with incident UTI during trial period.
+--------------------
+
+WITH patient_uti AS (
+  SELECT
+    PK_Patient_ID,
+    med.FK_Patient_Link_ID,
+    OrganisationCode AS prac_code,
+    B.Name AS prac_name,
+    Region AS region,
+    DATEDIFF(YEAR, dob, '2024-05-01') 
+      - CASE 
+          WHEN MONTH(dob) > 5 OR (MONTH(dob) = 5 AND DAY(dob) > 1) THEN 1 
+          ELSE 0 
+        END AS age
+  FROM 
+      [BRIT].[Patient] A 
+      INNER JOIN [BRIT].[Reference_GP_Practice] B 
+      ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
+      INNER JOIN [BRIT].[patient_link] pl 
+      ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+      INNER JOIN BRIT.GP_Events med  
+      ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+      INNER JOIN BRIT.Reference_SnomedCT snomed
+      ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
+  WHERE
+    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME)
+    AND snomed.ConceptID IN (
+                '68226007',
+                '38822007',
+                '275412000',
+                '267204006',
+                '199107005',
+                '199106001',
+                '199108000',
+                '199109008',
+                '199110003',
+                '197926005',
+                '197853008',
+                '197927001',
+                '314940005',
+                '68566005',
+                '74741000006107',
+                '368991000119100',
+                '301011002',
+                '1',
+                '369001000119100',
+                '369011000119102',
+                '307534009',
+                '609491002',
+                '199111004',
+                '61373006')
+),
+adult_patients AS (
+  SELECT PK_Patient_ID, prac_code, prac_name, region, MAX(age) AS age
+  FROM patient_uti
+  WHERE age >= 18
+  GROUP BY PK_Patient_ID, prac_code, prac_name, region
+),
+adult_patients_with_cci AS (
+  SELECT
+    ap.PK_Patient_ID,
+    ap.prac_code,
+    ap.prac_name,
+    ap.region,
+    cci.CCI_Score
+  FROM adult_patients ap
+  INNER JOIN BRIT.PerPatientCCIScore cci
+    ON cci.PK_Patient_ID = ap.PK_Patient_ID
+)
+INSERT INTO PerPracticeData(prac_code, prac_name, region, cci_mean_uti)
+SELECT
+  prac_code,
+  prac_name,
+  region,
+  AVG(CAST(CCI_Score AS FLOAT)) AS cci_mean_uti
+FROM adult_patients_with_cci
+GROUP BY prac_code, prac_name, region
+ORDER BY prac_code, prac_name, region
+;
+
+--------------------
+-- cci_mean_cough
+-- Most recent record
+-- Mean Charlson Comorbidity Index of adult patients with incident cough during trial period.
+--------------------
+
+WITH patient_cough AS (
+  SELECT
+    PK_Patient_ID,
+    med.FK_Patient_Link_ID,
+    OrganisationCode AS prac_code,
+    B.Name AS prac_name,
+    Region AS region,
+    DATEDIFF(YEAR, dob, '2024-05-01') 
+      - CASE 
+          WHEN MONTH(dob) > 5 OR (MONTH(dob) = 5 AND DAY(dob) > 1) THEN 1 
+          ELSE 0 
+        END AS age
+  FROM 
+      [BRIT].[Patient] A 
+      INNER JOIN [BRIT].[Reference_GP_Practice] B 
+      ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
+      INNER JOIN [BRIT].[patient_link] pl 
+      ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+      INNER JOIN BRIT.GP_Events med  
+      ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+      INNER JOIN BRIT.Reference_SnomedCT snomed
+      ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
+  WHERE
+    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME)
+    AND snomed.ConceptID IN (
+        '161929000',
+        '28743005',
+        '272039006',
+        '49727002',
+        '961781000006103',
+        '135883003',
+        '11833005',
+        '284523002',
+        '161923004',
+        '161924005',
+        '161925006',
+        '27836007'
+    )
+),
+adult_patients AS (
+  SELECT PK_Patient_ID, prac_code, prac_name, region, MAX(age) AS age
+  FROM patient_cough
+  WHERE age >= 18
+  GROUP BY PK_Patient_ID, prac_code, prac_name, region
+),
+adult_patients_with_cci AS (
+  SELECT
+    ap.PK_Patient_ID,
+    ap.prac_code,
+    ap.prac_name,
+    ap.region,
+    cci.CCI_Score
+  FROM adult_patients ap
+  INNER JOIN BRIT.PerPatientCCIScore cci
+    ON cci.PK_Patient_ID = ap.PK_Patient_ID
+)
+INSERT INTO PerPracticeData(prac_code, prac_name, region, cci_mean_cough)
+SELECT
+  prac_code,
+  prac_name,
+  region,
+  AVG(CAST(CCI_Score AS FLOAT)) AS cci_mean_cough
+FROM adult_patients_with_cci
+GROUP BY prac_code, prac_name, region
+ORDER BY prac_code, prac_name, region
+;
+
+--------------------
+-- cci_mean_throat
+-- Most recent record
+-- Mean Charlson Comorbidity Index of adult patients with incident sore throat during trial period.
+--------------------
+
+WITH patient_throat AS (
+  SELECT
+    PK_Patient_ID,
+    med.FK_Patient_Link_ID,
+    OrganisationCode AS prac_code,
+    B.Name AS prac_name,
+    Region AS region,
+    DATEDIFF(YEAR, dob, '2024-05-01') 
+      - CASE 
+          WHEN MONTH(dob) > 5 OR (MONTH(dob) = 5 AND DAY(dob) > 1) THEN 1 
+          ELSE 0 
+        END AS age
+  FROM 
+      [BRIT].[Patient] A 
+      INNER JOIN [BRIT].[Reference_GP_Practice] B 
+      ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
+      INNER JOIN [BRIT].[patient_link] pl 
+      ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+      INNER JOIN BRIT.GP_Events med  
+      ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+      INNER JOIN BRIT.Reference_SnomedCT snomed
+      ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
+  WHERE
+    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME) 
+    AND snomed.ConceptID IN (
+      '195658003',
+      '195671000',
+      '195669000',
+      '195666007',
+      '195667003',
+      '399050001',
+      '363746003',
+      '195656004',
+      '195673002',
+      '17741008',
+      '195657008',
+      '195668008',
+      '195803003',
+      '41188003',
+      '162388002',
+      '195804009',
+      '164256007',
+      '162397003',
+      '15033003',
+      '405737000',
+      '195677001',
+      '267102003',
+      '538331000000101',
+      '43878008',
+      '85769006',
+      '186357007',
+      '41582007',
+      '90176007',
+      '300932000',
+      '186963008',
+      '232427004',
+      '173599005',
+      '232417005',
+      '195662009'
+    )
+),
+adult_patients AS (
+  SELECT PK_Patient_ID, prac_code, prac_name, region, MAX(age) AS age
+  FROM patient_throat
+  WHERE age >= 18
+  GROUP BY PK_Patient_ID, prac_code, prac_name, region
+),
+adult_patients_with_cci AS (
+  SELECT
+    ap.PK_Patient_ID,
+    ap.prac_code,
+    ap.prac_name,
+    ap.region,
+    cci.CCI_Score
+  FROM adult_patients ap
+  INNER JOIN BRIT.PerPatientCCIScore cci
+    ON cci.PK_Patient_ID = ap.PK_Patient_ID
+)
+INSERT INTO PerPracticeData(prac_code, prac_name, region, cci_mean_throat)
+SELECT
+  prac_code,
+  prac_name,
+  region,
+  AVG(CAST(CCI_Score AS FLOAT)) AS cci_mean_throat
+FROM adult_patients_with_cci
+GROUP BY prac_code, prac_name, region
+ORDER BY prac_code, prac_name, region
+;
+
+
+--------------------
+-- cci_mean_media
+-- Most recent record
+-- Mean Charlson Comorbidity Index of adult patients with incident otitis media during trial period.
+--------------------
+
+WITH patient_media AS (
+  SELECT
+    PK_Patient_ID,
+    med.FK_Patient_Link_ID,
+    OrganisationCode AS prac_code,
+    B.Name AS prac_name,
+    Region AS region,
+    DATEDIFF(YEAR, dob, '2024-05-01') 
+      - CASE 
+          WHEN MONTH(dob) > 5 OR (MONTH(dob) = 5 AND DAY(dob) > 1) THEN 1 
+          ELSE 0 
+        END AS age
+  FROM 
+      [BRIT].[Patient] A 
+      INNER JOIN [BRIT].[Reference_GP_Practice] B 
+      ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
+      INNER JOIN [BRIT].[patient_link] pl 
+      ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+      INNER JOIN BRIT.GP_Events med  
+      ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+      INNER JOIN BRIT.Reference_SnomedCT snomed
+      ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
+  WHERE
+    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME) 
+    AND snomed.ConceptID IN (
+      '194290005',
+      '7271000119107',
+      '194288009',
+      '52353000',
+      '1088061000119105',
+      '1090681000119105',
+      '359609001',
+      '194240006',
+      '270490007',
+      '194289001',
+      '77478005',
+      '194281003',
+      '14948001',
+      '86279000',
+      '194282005',
+      '49252004',
+      '194286008',
+      '267756004',
+      '29350000',
+      '129127001',
+      '270491006',
+      '78868004',
+      '275481002',
+      '194237006',
+      '164236006',
+      '65363002',
+      '81564005',
+      '13420004',
+      '39288006',
+      '194287004',
+      '80327007'
+    )
+),
+adult_patients AS (
+  SELECT PK_Patient_ID, prac_code, prac_name, region, MAX(age) AS age
+  FROM patient_media
+  WHERE age >= 18
+  GROUP BY PK_Patient_ID, prac_code, prac_name, region
+),
+adult_patients_with_cci AS (
+  SELECT
+    ap.PK_Patient_ID,
+    ap.prac_code,
+    ap.prac_name,
+    ap.region,
+    cci.CCI_Score
+  FROM adult_patients ap
+  INNER JOIN BRIT.PerPatientCCIScore cci
+    ON cci.PK_Patient_ID = ap.PK_Patient_ID
+)
+INSERT INTO PerPracticeData(prac_code, prac_name, region, cci_mean_media)
+SELECT
+  prac_code,
+  prac_name,
+  region,
+  AVG(CAST(CCI_Score AS FLOAT)) AS cci_mean_media
+FROM adult_patients_with_cci
+GROUP BY prac_code, prac_name, region
+ORDER BY prac_code, prac_name, region
+;
+
+
+--------------------
+-- cci_mean_externa
+-- Most recent record
+-- Mean Charlson Comorbidity Index of adult patients with incident otitis externa during trial period.
+--------------------
+
+WITH patient_externa AS (
+  SELECT
+    PK_Patient_ID,
+    med.FK_Patient_Link_ID,
+    OrganisationCode AS prac_code,
+    B.Name AS prac_name,
+    Region AS region,
+    DATEDIFF(YEAR, dob, '2024-05-01') 
+      - CASE 
+          WHEN MONTH(dob) > 5 OR (MONTH(dob) = 5 AND DAY(dob) > 1) THEN 1 
+          ELSE 0 
+        END AS age
+  FROM 
+      [BRIT].[Patient] A 
+      INNER JOIN [BRIT].[Reference_GP_Practice] B 
+      ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
+      INNER JOIN [BRIT].[patient_link] pl 
+      ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+      INNER JOIN BRIT.GP_Events med  
+      ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+      INNER JOIN BRIT.Reference_SnomedCT snomed
+      ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
+  WHERE
+    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME)
+    AND snomed.ConceptID IN (
+      '232212002',
+      '54272002',
+      '56663002',
+      '267665002',
+      '30250000',
+      '45855004',
+      '232214001',
+      '402699002',
+      '76583009',
+      '403432008',
+      '403433003',
+      '232224009',
+      '45431004',
+      '95812002',
+      '194202008',
+      '194204009',
+      '33934002',
+      '194203003',
+      '402697000',
+      '86981007',
+      '111856000',
+      '21954000',
+      '3135009',
+      '575931000000108',
+      '34129005'
+    )
+),
+adult_patients AS (
+  SELECT PK_Patient_ID, prac_code, prac_name, region, MAX(age) AS age
+  FROM patient_externa
+  WHERE age >= 18
+  GROUP BY PK_Patient_ID, prac_code, prac_name, region
+),
+adult_patients_with_cci AS (
+  SELECT
+    ap.PK_Patient_ID,
+    ap.prac_code,
+    ap.prac_name,
+    ap.region,
+    cci.CCI_Score
+  FROM adult_patients ap
+  INNER JOIN BRIT.PerPatientCCIScore cci
+    ON cci.PK_Patient_ID = ap.PK_Patient_ID
+)
+INSERT INTO PerPracticeData(prac_code, prac_name, region, cci_mean_externa)
+SELECT
+  prac_code,
+  prac_name,
+  region,
+  AVG(CAST(CCI_Score AS FLOAT)) AS cci_mean_externa
+FROM adult_patients_with_cci
+GROUP BY prac_code, prac_name, region
+ORDER BY prac_code, prac_name, region
+;
+
+
+--------------------
+-- cci_mean_sinus
+-- Most recent record
+-- Mean Charlson Comorbidity Index of adult patients with incident sinusitis during trial period.
+--------------------
+
+WITH patient_sinus AS (
+  SELECT
+    PK_Patient_ID,
+    med.FK_Patient_Link_ID,
+    OrganisationCode AS prac_code,
+    B.Name AS prac_name,
+    Region AS region,
+    DATEDIFF(YEAR, dob, '2024-05-01') 
+      - CASE 
+          WHEN MONTH(dob) > 5 OR (MONTH(dob) = 5 AND DAY(dob) > 1) THEN 1 
+          ELSE 0 
+        END AS age
+  FROM 
+      [BRIT].[Patient] A 
+      INNER JOIN [BRIT].[Reference_GP_Practice] B 
+      ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
+      INNER JOIN [BRIT].[patient_link] pl 
+      ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+      INNER JOIN BRIT.GP_Events med  
+      ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+      INNER JOIN BRIT.Reference_SnomedCT snomed
+      ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
+  WHERE
+    med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME) 
+    AND snomed.ConceptID IN (
+      '67832005',
+      '91038008',
+      '68272006',
+      '431231008',
+      '15805002',
+      '77919000',
+      '35923002',
+      '73237007',
+      '60130002',
+      '88850006',
+      '40055000',
+      '897657000',
+      '78737005',
+      '88348008',
+      '195790000',
+      '195788001',
+      '36971009'
+    )
+),
+adult_patients AS (
+  SELECT PK_Patient_ID, prac_code, prac_name, region, MAX(age) AS age
+  FROM patient_sinus
+  WHERE age >= 18
+  GROUP BY PK_Patient_ID, prac_code, prac_name, region
+),
+adult_patients_with_cci AS (
+  SELECT
+    ap.PK_Patient_ID,
+    ap.prac_code,
+    ap.prac_name,
+    ap.region,
+    cci.CCI_Score
+  FROM adult_patients ap
+  INNER JOIN BRIT.PerPatientCCIScore cci
+    ON cci.PK_Patient_ID = ap.PK_Patient_ID
+)
+INSERT INTO PerPracticeData(prac_code, prac_name, region, cci_mean_sinus)
+SELECT
+  prac_code,
+  prac_name,
+  region,
+  AVG(CAST(CCI_Score AS FLOAT)) AS cci_mean_sinus
+FROM adult_patients_with_cci
+GROUP BY prac_code, prac_name, region
+ORDER BY prac_code, prac_name, region
+;
+
 ------------
 --consult_bl  Baseline  Number of consultations for adult patients with common infections during baseline year.
 --------------------
@@ -48246,19 +49270,74 @@ comp_events AS (
   WHERE
     med.EventDate BETWEEN '2023-02-01' AND '2024-02-01'
     AND BRIT.Reference_SnomedCT.ConceptID IN (
-      '60404007','721104000','447843005','448813005','58554001','72102005',
-      '192744002','79897009','80640009','386034005','392233007','2858002',
-      '449082003','91302008','396234004','3321001','95883001','129128006',
-      '371093006','15033003','192741005','164255006','10321002','186327003',
-      '186365005','23511006','449504009','448419003','192643004','192644005',
-      '192743008','27614006','111538005','52404001','271503005','196067009',
-      '128477000','36689008','45816000','27174002','18071005','609485004',
-      '40125005','276678006','66696003','240444009','447894003','23754003',
-      '312682007','314130008','335846001','28085001','448418006','4089001',
-      '372939007','449083008','30437004','447899008','32801008','33631007',
-      '271504004','313437008','441806004','4510004','48245008','51169003',
-      '568411000000108','601541000000108'
-    )
+'195902009','422588002','422588002','196035006','196035006','44549008','233606009','53084003',
+'300999006','300999006','719218000','719218000','396285007','719218000','719218000','719218000',
+'396285007','396285007','3487004','3487004','3487004','195878008','53084003','312342009',
+'266350000','312342009','396285007','75570004','195902009','385093006','385093006','78895009',
+'78895009','719218000','719218000','719218000','719218000','46970008','46970008','195886008',
+'70036007','425464007','425464007','425464007','31561003','85469005','46970008','312342009',
+'195878008','41269000','195878008','195878008','195878008','41269000','422588002','64667001',
+'64667001','195889001','195889001','195889001','195889001','266350000','278516003','278516003',
+'396285007','300999006','195900001','46970008','46970008','46970008','195909000','425464007',
+'53084003','78895009','195878008','46970008','46970008','85469005','46970008','266350000',
+'195878008','64479007','46970008','46970008','41381004','34020007','195900001','53084003',
+'46970008','70036007','64479007','46970008','53084003','53084003','312342009','46970008',
+'41381004','312342009','34020007','195886008','59475000','32286006','59475000','195878008',
+'195902009','3487004','312342009','312342009','195900001','195909000','312342009','312342009',
+'312342009','59475000','32286006','59475000','196035006','196035006','448719004','314978007',
+'46970008','46970008','41381004','3487004','3487004','32286006','22754005','34020007',
+'80003002','75570004','75570004','75570004','196035006','59475000','53084003','312342009',
+'75570004','53084003','312342009','53084003','75570004','36689008','36689008','32801008',
+'36689008','36689008','36689008','23754003','129128006','129128006','129128006','80640009',
+'80640009','27174002','45816000','129128006','3321001','3321001','129128006','45816000',
+'48245008','48245008','2858002','447899008','449082003','609485004','2858002','2858002',
+'2858002','2858002','2858002','2858002','4089001','4089001','4089001','4089001','449082003',
+'91302008','91302008','448418006','186327003','2858002','2858002','2858002','2858002',
+'2858002','2858002','2858002','2858002','449083008','91302008','91302008','447843005',
+'447899008','449082003','448813005','449083008','447894003','448418006','448419003',
+'449504009','448419003','449504009','447843005','447843005','447899008','449082003',
+'449082003','449082003','447894003','448813005','449083008','449083008','447894003',
+'447894003','448418006','448419003','449504009','448419003','449504009','721104000',
+'371093006','91302008','48245008','396234004','91302008','447843005','449082003','449504009',
+'448419003','91302008','609485004','447894003','448418006','448418006','448418006',
+'91302008','609485004','25042006','276678006','371093006','371093006','371093006','2858002',
+'91302008','448418006','449082003','91302008','448418006','128477000','312682007','66696003',
+'30437004','312682007','58554001','271504004','58554001','30437004','28085001','271503005',
+'271503005','271504004','271504004','271503005','271503005','196067009','196067009',
+'58554001','271503005','271504004','58554001','33631007','58554001','30437004','58554001',
+'128477000','128477000','60404007','79897009','79897009','60404007','60404007','192743008',
+'192743008','192743008','27614006','27614006','192741005','192741005','60404007',
+'192744002','192744002','240444009','240444009','240444009','386034005','10321002',
+'386034005','386034005','111538005','111538005','335846001','80645004','80645004','55996006',
+'386034005','4016003','10321002','52404001','52404001','55996006','55996006','72102005',
+'72102005','72102005','52404001','55996006','52404001','186365005','186365005','95883001',
+'95883001','95883001','192644005','192644005','192643004','23511006','192644005','95883001',
+'95883001','192644005','23511006','18071005','18071005','18071005','23511006','23511006',
+'23511006','192644005','313437008','313437008','314130008','314130008','95883001','95883001',
+'23511006','23511006','51169003','4510004','95883001','23511006','95883001','23511006',
+'196112005','195908008','41207000','40733004','40733004','111900000','87628006','87628006',
+'87628006','87628006','87628006','87628006','425996009','425996009','5.40151E+14',
+'6.89401E+14','6.89401E+14','195911009','195911009','233609002','87628006','9861002',
+'87628006','40733004','40733004','40733004','40733004','51530003','406595002','51530003',
+'233624006','40733004','406595002','406595002','40733004','40733004','40733004',
+'1033111000000104','40733004','301000005','301000005','301000005','301002002','301002002',
+'426696003','301000005','301000005','301000005','301002002','301001009','301003007',
+'301004001','95436008','301002002','440990006','406595002','40733004','40733004','87628006',
+'87628006','87628006','40733004','87628006','87628006','87628006','87628006','87628006',
+'40733004','64917006','64917006','64917006','415125002','9861002','415125002','415125002',
+'233609002','51530003','51530003','195896004','195881003','41207000','51530003','51530003',
+'64917006','64917006','195896004','195896004','195888009','195881003','111900000',
+'5.40151E+14','195908008','111900000','2523007','5.40151E+14','205237003','205237003',
+'205237003','205237003','191727003','191727003','195888009','415125002','7548000','7548000',
+'40733004','40733004','40733004','301001009','301001009','301001009','301003007',
+'301003007','301004001','301004001','301001009','301001009','301003007','301004001',
+'301004001','2523007','40733004','40733004','9861002','40733004','195911009','195911009',
+'40733004','40733004','87628006','40733004','40733004','205237003','40733004','40733004',
+'87628006','87628006','40733004','87628006','205237003','40733004','40733004','40733004',
+'15033003','392233007','392233007','392233007','164255006','164255006','164255006',
+'15033003','15033003','392233007','15033003'
+)
+
 ),
 
 linked_complications AS (
@@ -48368,20 +49447,74 @@ comp_events AS (
       ON BRIT.Reference_SnomedCT.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
   WHERE
     med.EventDate BETWEEN '2024-05-01' AND '2025-05-30'
-    AND BRIT.Reference_SnomedCT.ConceptID IN (
-      '60404007','721104000','447843005','448813005','58554001','72102005',
-      '192744002','79897009','80640009','386034005','392233007','2858002',
-      '449082003','91302008','396234004','3321001','95883001','129128006',
-      '371093006','15033003','192741005','164255006','10321002','186327003',
-      '186365005','23511006','449504009','448419003','192643004','192644005',
-      '192743008','27614006','111538005','52404001','271503005','196067009',
-      '128477000','36689008','45816000','27174002','18071005','609485004',
-      '40125005','276678006','66696003','240444009','447894003','23754003',
-      '312682007','314130008','335846001','28085001','448418006','4089001',
-      '372939007','449083008','30437004','447899008','32801008','33631007',
-      '271504004','313437008','441806004','4510004','48245008','51169003',
-      '568411000000108','601541000000108'
-    )
+    AND BRIT.Reference_SnomedCT.ConceptID IN 
+(
+'195902009','422588002','422588002','196035006','196035006','44549008','233606009','53084003',
+'300999006','300999006','719218000','719218000','396285007','719218000','719218000','719218000',
+'396285007','396285007','3487004','3487004','3487004','195878008','53084003','312342009',
+'266350000','312342009','396285007','75570004','195902009','385093006','385093006','78895009',
+'78895009','719218000','719218000','719218000','719218000','46970008','46970008','195886008',
+'70036007','425464007','425464007','425464007','31561003','85469005','46970008','312342009',
+'195878008','41269000','195878008','195878008','195878008','41269000','422588002','64667001',
+'64667001','195889001','195889001','195889001','195889001','266350000','278516003','278516003',
+'396285007','300999006','195900001','46970008','46970008','46970008','195909000','425464007',
+'53084003','78895009','195878008','46970008','46970008','85469005','46970008','266350000',
+'195878008','64479007','46970008','46970008','41381004','34020007','195900001','53084003',
+'46970008','70036007','64479007','46970008','53084003','53084003','312342009','46970008',
+'41381004','312342009','34020007','195886008','59475000','32286006','59475000','195878008',
+'195902009','3487004','312342009','312342009','195900001','195909000','312342009','312342009',
+'312342009','59475000','32286006','59475000','196035006','196035006','448719004','314978007',
+'46970008','46970008','41381004','3487004','3487004','32286006','22754005','34020007',
+'80003002','75570004','75570004','75570004','196035006','59475000','53084003','312342009',
+'75570004','53084003','312342009','53084003','75570004','36689008','36689008','32801008',
+'36689008','36689008','36689008','23754003','129128006','129128006','129128006','80640009',
+'80640009','27174002','45816000','129128006','3321001','3321001','129128006','45816000',
+'48245008','48245008','2858002','447899008','449082003','609485004','2858002','2858002',
+'2858002','2858002','2858002','2858002','4089001','4089001','4089001','4089001','449082003',
+'91302008','91302008','448418006','186327003','2858002','2858002','2858002','2858002',
+'2858002','2858002','2858002','2858002','449083008','91302008','91302008','447843005',
+'447899008','449082003','448813005','449083008','447894003','448418006','448419003',
+'449504009','448419003','449504009','447843005','447843005','447899008','449082003',
+'449082003','449082003','447894003','448813005','449083008','449083008','447894003',
+'447894003','448418006','448419003','449504009','448419003','449504009','721104000',
+'371093006','91302008','48245008','396234004','91302008','447843005','449082003','449504009',
+'448419003','91302008','609485004','447894003','448418006','448418006','448418006',
+'91302008','609485004','25042006','276678006','371093006','371093006','371093006','2858002',
+'91302008','448418006','449082003','91302008','448418006','128477000','312682007','66696003',
+'30437004','312682007','58554001','271504004','58554001','30437004','28085001','271503005',
+'271503005','271504004','271504004','271503005','271503005','196067009','196067009',
+'58554001','271503005','271504004','58554001','33631007','58554001','30437004','58554001',
+'128477000','128477000','60404007','79897009','79897009','60404007','60404007','192743008',
+'192743008','192743008','27614006','27614006','192741005','192741005','60404007',
+'192744002','192744002','240444009','240444009','240444009','386034005','10321002',
+'386034005','386034005','111538005','111538005','335846001','80645004','80645004','55996006',
+'386034005','4016003','10321002','52404001','52404001','55996006','55996006','72102005',
+'72102005','72102005','52404001','55996006','52404001','186365005','186365005','95883001',
+'95883001','95883001','192644005','192644005','192643004','23511006','192644005','95883001',
+'95883001','192644005','23511006','18071005','18071005','18071005','23511006','23511006',
+'23511006','192644005','313437008','313437008','314130008','314130008','95883001','95883001',
+'23511006','23511006','51169003','4510004','95883001','23511006','95883001','23511006',
+'196112005','195908008','41207000','40733004','40733004','111900000','87628006','87628006',
+'87628006','87628006','87628006','87628006','425996009','425996009','5.40151E+14',
+'6.89401E+14','6.89401E+14','195911009','195911009','233609002','87628006','9861002',
+'87628006','40733004','40733004','40733004','40733004','51530003','406595002','51530003',
+'233624006','40733004','406595002','406595002','40733004','40733004','40733004',
+'1033111000000104','40733004','301000005','301000005','301000005','301002002','301002002',
+'426696003','301000005','301000005','301000005','301002002','301001009','301003007',
+'301004001','95436008','301002002','440990006','406595002','40733004','40733004','87628006',
+'87628006','87628006','40733004','87628006','87628006','87628006','87628006','87628006',
+'40733004','64917006','64917006','64917006','415125002','9861002','415125002','415125002',
+'233609002','51530003','51530003','195896004','195881003','41207000','51530003','51530003',
+'64917006','64917006','195896004','195896004','195888009','195881003','111900000',
+'5.40151E+14','195908008','111900000','2523007','5.40151E+14','205237003','205237003',
+'205237003','205237003','191727003','191727003','195888009','415125002','7548000','7548000',
+'40733004','40733004','40733004','301001009','301001009','301001009','301003007',
+'301003007','301004001','301004001','301001009','301001009','301003007','301004001',
+'301004001','2523007','40733004','40733004','9861002','40733004','195911009','195911009',
+'40733004','40733004','87628006','40733004','40733004','205237003','40733004','40733004',
+'87628006','87628006','40733004','87628006','205237003','40733004','40733004','40733004',
+'15033003','392233007','392233007','392233007','164255006','164255006','164255006',
+'15033003','15033003','392233007','15033003' )
 ),
 
 linked_complications AS (
@@ -48588,332 +49721,530 @@ FROM adult_patients
 GROUP BY prac_code, prac_name, region
 ;
 
-------------
--- smoke_ex 
--- Most recent record 
--- Number of adult patients who are ex-smokers using the most recent record.
-------------
+------------------------------------------------------------
+-- smoke_nev
+-- Most recent record
+-- Number of adult patients who never smoked
+------------------------------------------------------------
 
-WITH patient_ages AS (
-  SELECT
-    PK_Patient_ID,
-    med.FK_Patient_Link_ID,
-    OrganisationCode AS prac_code,
-    B.Name AS prac_name,
-    Region AS region,
-    DATEDIFF(YEAR, dob, '2024-05-01') 
-      - CASE 
-          WHEN MONTH(dob) > 5 OR (MONTH(dob) = 5 AND DAY(dob) > 1) THEN 1 
-          ELSE 0 
-        END AS age
-  FROM 
-      [BRIT].[Patient] A 
-      INNER JOIN [BRIT].[Reference_GP_Practice] B 
-      ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
-      INNER JOIN [BRIT].[patient_link] pl 
-      ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.GP_Events med  
-      ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.Reference_SnomedCT snomed
-      ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
-  WHERE
-    snomed.ConceptID IN ('53896009',
-'281018007',
-'360890004',
-'360900008',
-'517211000000106',
-'1092111000000100',
-'1092131000000100',
-'1092041000000100',
-'735128000',
-'1092031000000100')
+WITH adult_patients AS (
+    SELECT
+        A.PK_Patient_ID,
+        pl.PK_Patient_Link_ID,
+        B.OrganisationCode AS prac_code,
+        B.Name AS prac_name,
+        B.Region AS region,
+        DATEDIFF(YEAR, A.dob, '2024-05-01')
+          - CASE 
+              WHEN MONTH(A.dob) > 5 
+                OR (MONTH(A.dob) = 5 AND DAY(A.dob) > 1)
+              THEN 1 ELSE 0
+            END AS age
+    FROM BRIT.Patient A
+    INNER JOIN BRIT.Reference_GP_Practice B
+        ON B.PK_Reference_GP_Practice_ID = A.FK_Reference_GP_Practice_ID
+    INNER JOIN BRIT.patient_link pl
+        ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+    WHERE
+        DATEDIFF(YEAR, A.dob, '2024-05-01')
+          - CASE 
+              WHEN MONTH(A.dob) > 5 
+                OR (MONTH(A.dob) = 5 AND DAY(A.dob) > 1)
+              THEN 1 ELSE 0
+            END >= 18
 ),
-adult_patients AS (
-  SELECT *
-  FROM patient_ages
-  WHERE age >= 18
-)
-INSERT INTO PerPracticeData(prac_code,prac_name,region,smoke_ex)
-  SELECT
-    prac_code,
-    prac_name,
-    region,
-    COUNT(DISTINCT PK_Patient_ID) AS smoke_ex
-  FROM adult_patients
-  GROUP BY prac_code,prac_name,region
-  ORDER BY prac_code,prac_name,region
-;
 
-------------
--- smoke_cur  
--- Most recent record 
--- Number of adult patients who currently smoke using the most recent record.
-------------
-
-WITH patient_ages AS (
-  SELECT
-    PK_Patient_ID,
-    med.FK_Patient_Link_ID,
-    OrganisationCode AS prac_code,
-    B.Name AS prac_name,
-    Region AS region,
-    DATEDIFF(YEAR, dob, '2024-05-01') 
-      - CASE 
-          WHEN MONTH(dob) > 5 OR (MONTH(dob) = 5 AND DAY(dob) > 1) THEN 1 
-          ELSE 0 
-        END AS age
-  FROM 
-      [BRIT].[Patient] A 
-      INNER JOIN [BRIT].[Reference_GP_Practice] B 
-      ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
-      INNER JOIN [BRIT].[patient_link] pl 
-      ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.GP_Events med  
-      ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.Reference_SnomedCT snomed
-      ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
-  WHERE
-    snomed.ConceptID IN ('77176002',
-'82302008',
-'59978006',
-'230065006',
-'134406006',
-'266929003',
-'65568007',
-'308438006',
-'698289004',
-'428041000124106',
-'395177003',
-'449868002',
-'315213009',
-'203191000000107',
-'394872000',
-'230060001',
-'230063004',
-'230059006',
-'160616005',
-'230062009',
-'230064005',
-'160612007',
-'56771006',
-'108333003',
-'446172000',
-'394871007',
-'713914004',
-'768971000000109',
-'56578002',
-'160603005',
-'365982000',
-'160605003',
-'185789006',
-'394873005',
-'365981007',
-'160606002',
-'160604004',
-'266920004',
-'315232003',
-'95269005',
-'19511000175105',
-'527151000000107',
-'401068004',
-'1110791000000100',
-'505581000000108',
-'720401000000103',
-'783381000000101',
-'185794006',
-'185792005',
-'401160008',
-'1087441000000100',
-'871661000000106',
-'185793000',
-'185795007',
-'395700008',
-'225324006',
-'699033005',
-'25261000000107',
-'822591000000108',
-'171055003',
-'225323000',
-'765000002',
-'771155005',
-'185796008',
-'390901002',
-'10729003',
-'1084381000000100',
-'201931000000109',
-'310429001',
-'783481000000106',
-'783401000000101',
-'710081004',
-'783441000000103',
-'864091000000103',
-'521721000000109',
-'711081005',
-'966991000000104',
-'384742004',
-'505651000000103',
-'709507008',
-'242488005',
-'767641000000109',
-'871641000000105',
-'966971000000103',
-'713700008',
-'750851000000104',
-'201941000000100',
-'401159003',
-'712829007',
-'751661000000106',
-'755721000000107',
-'712971000000108',
-'770729006',
-'838131000000103',
-'505281000000106',
-'755741000000100',
-'200221000000105',
-'242478009',
-'750821000000109',
-'751101000000101',
-'235033006',
-'5661000124106',
-'110483000',
-'89765005',
-'81703003',
-'408937009',
-'228517005',
-'697956009',
-'191887008',
-'247439004',
-'82958007',
-'228516001',
-'449869005',
-'9473008',
-'711028002',
-'408940009',
-'191888003',
-'228514003',
-'30483005',
-'228515002',
-'890112007',
-'408939007',
-'702388001',
-'449867007',
-'314538009',
-'228518000',
-'365980008',
-'228509002',
-'870621003',
-'212899006',
-'228499007',
-'16077091000119100',
-'228504007',
-'16077171000119100',
-'10761391000119100',
-'857871000000107',
-'857841000000101',
-'722499006',
-'785889008',
-'786063001',
-'276468004',
-'46802002',
-'160619003',
-'217579004',
-'217580001',
-'242853001',
-'1148962001',
-'1148687006',
-'1137691001',
-'217526009',
-'1148819003',
-'722494001',
-'724697004',
-'56294008',
-'313396002',
-'143511000000101',
-'143731000000100',
-'143591000000105',
-'143571000000106',
-'143491000000109',
-'143561000000104',
-'143641000000101',
-'724698009',
-'143531000000109',
-'390905006',
-'784481000000108',
-'280801000000101',
-'280811000000104',
-'200211000000104',
-'790121000000107',
-'790131000000109',
-'217584005',
-'217530007',
-'160613002')
+smoking_events AS (
+    SELECT
+        med.FK_Patient_Link_ID,
+        snomed.ConceptID,
+        med.EventDate,
+        ROW_NUMBER() OVER (
+            PARTITION BY med.FK_Patient_Link_ID
+            ORDER BY med.EventDate DESC
+        ) AS rn
+    FROM BRIT.GP_Events med
+    INNER JOIN BRIT.Reference_SnomedCT snomed
+        ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
+    WHERE snomed.ConceptID IN (
+'8392000',
+  '266919005',
+  '43381005',
+  '722451000000101',
+  '160618006',
+  '87739003',
+  '360918006',
+  '360929005',
+  '221000119102',
+  '105541001',
+  '105539002',
+  '105540000',
+  '405746006',
+  '129570009',
+  '505681000000109',
+  '702979003',
+  '228512004',
+  '228511006',
+  '228502006',
+  '228501004',
+  '1137690000'
+    )
 ),
-adult_patients AS (
-  SELECT *
-  FROM patient_ages
-  WHERE age >= 18
+
+latest_smoking AS (
+    SELECT FK_Patient_Link_ID, ConceptID
+    FROM smoking_events
+    WHERE rn = 1
 )
-INSERT INTO PerPracticeData(prac_code,prac_name,region,smoke_cur)
-  SELECT
-    prac_code,
-    prac_name,
-    region,
-    COUNT(DISTINCT PK_Patient_ID) AS smoke_cur
-  FROM adult_patients
-  GROUP BY prac_code,prac_name,region
-  ORDER BY prac_code,prac_name,region
-;
 
-------------
--- smoke_unk  
--- Most recent record 
--- Number of adult patients where smoking status is unknown using the most recent record.
-------------
+INSERT INTO PerPracticeData (prac_code, prac_name, region, smoke_nev)
+SELECT
+    ap.prac_code,
+    ap.prac_name,
+    ap.region,
+    COUNT(DISTINCT ap.PK_Patient_ID)
+FROM adult_patients ap
+INNER JOIN latest_smoking ls
+    ON ls.FK_Patient_Link_ID = ap.PK_Patient_Link_ID
+GROUP BY ap.prac_code, ap.prac_name, ap.region;
 
-WITH patient_ages AS (
-  SELECT
-    PK_Patient_ID,
-    med.FK_Patient_Link_ID,
-    OrganisationCode AS prac_code,
-    B.Name AS prac_name,
-    Region AS region,
-    DATEDIFF(YEAR, dob, '2024-05-01') 
-      - CASE 
-          WHEN MONTH(dob) > 5 OR (MONTH(dob) = 5 AND DAY(dob) > 1) THEN 1 
-          ELSE 0 
-        END AS age
-  FROM 
-      [BRIT].[Patient] A 
-      INNER JOIN [BRIT].[Reference_GP_Practice] B 
-      ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
-      INNER JOIN [BRIT].[patient_link] pl 
-      ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.GP_Events med  
-      ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.Reference_SnomedCT snomed
-      ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
-  WHERE
-    snomed.ConceptID IN ('1098881000000100',
+------------------------------------------------------------
+-- smoke_cur
+-- Most recent record
+-- Number of adult patients who currently smoke
+------------------------------------------------------------
+
+WITH adult_patients AS (
+    SELECT
+        A.PK_Patient_ID,
+        pl.PK_Patient_Link_ID,
+        B.OrganisationCode AS prac_code,
+        B.Name AS prac_name,
+        B.Region AS region,
+        DATEDIFF(YEAR, A.dob, '2024-05-01')
+          - CASE 
+              WHEN MONTH(A.dob) > 5 
+                OR (MONTH(A.dob) = 5 AND DAY(A.dob) > 1)
+              THEN 1 ELSE 0
+            END AS age
+    FROM BRIT.Patient A
+    INNER JOIN BRIT.Reference_GP_Practice B
+        ON B.PK_Reference_GP_Practice_ID = A.FK_Reference_GP_Practice_ID
+    INNER JOIN BRIT.patient_link pl
+        ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+    WHERE
+        DATEDIFF(YEAR, A.dob, '2024-05-01')
+          - CASE 
+              WHEN MONTH(A.dob) > 5 
+                OR (MONTH(A.dob) = 5 AND DAY(A.dob) > 1)
+              THEN 1 ELSE 0
+            END >= 18
+),
+
+smoking_events AS (
+    SELECT
+        med.FK_Patient_Link_ID,
+        snomed.ConceptID,
+        med.EventDate,
+        ROW_NUMBER() OVER (
+            PARTITION BY med.FK_Patient_Link_ID
+            ORDER BY med.EventDate DESC
+        ) AS rn
+    FROM BRIT.GP_Events med
+    INNER JOIN BRIT.Reference_SnomedCT snomed
+        ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
+    WHERE snomed.ConceptID IN (
+  '77176002',
+  '82302008',
+  '59978006',
+  '230065006',
+  '134406006',
+  '266929003',
+  '65568007',
+  '308438006',
+  '698289004',
+  '428041000124106',
+  '395177003',
+  '449868002',
+  '315213009',
+  '203191000000107',
+  '394872000',
+  '230060001',
+  '59978006',
+  '230063004',
+  '230059006',
+  '160616005',
+  '230062009',
+  '230064005',
+  '160612007',
+  '56771006',
+  '108333003',
+  '446172000',
+  '394871007',
+  '713914004',
+  '768971000000109',
+  '56578002',
+  '160603005',
+  '365982000',
+  '160605003',
+  '185789006',
+  '394873005',
+  '365981007',
+  '160606002',
+  '160604004',
+  '266920004',
+  '315232003',
+  '273632007',
+  '273738001',
+  '95269005',
+  '19511000175105',
+  '527151000000107',
+  '401068004',
+  '1110791000000100',
+  '850331000000104',
+  '505581000000108',
+  '720401000000103',
+  '783381000000101',
+  '185794006',
+  '185792005',
+  '401160008',
+  '1087441000000100',
+  '871661000000106',
+  '390903004',
+  '185793000',
+  '185795007',
+  '395700008',
+  '225324006',
+  '699033005',
+  '25261000000107',
+  '822591000000108',
+  '171055003',
+  '225323000',
+  '765000002',
+  '771155005',
+  '185796008',
+  '390901002',
+  '408398007',
+  '10729003',
+  '1084381000000100',
+  '201931000000109',
+  '310429001',
+  '783481000000106',
+  '783401000000101',
+  '710081004',
+  '783441000000103',
+  '864091000000103',
+  '521721000000109',
+  '185799001',
+  '711081005',
+  '966991000000104',
+  '384742004',
+  '505651000000103',
+  '709507008',
+  '242488005',
+  '767641000000109',
+  '871641000000105',
+  '440012000',
+  '966971000000103',
+  '713700008',
+  '390900001',
+  '1087441000000100',
+  '750851000000104',
+  '201941000000100',
+  '401159003',
+  '712829007',
+  '751661000000106',
+  '755721000000107',
+  '712971000000108',
+  '770729006',
+  '838131000000103',
+  '505281000000106',
+  '755741000000100',
+  '200221000000105',
+  '242478009',
+  '750821000000109',
+  '751101000000101',
+  '235033006',
+  '5661000124106',
+  '110483000',
+  '89765005',
+  '81703003',
+  '45571007',
+  '408937009',
+  '228517005',
+  '697956009',
+  '191887008',
+  '247439004',
+  '82958007',
+  '228516001',
+  '449869005',
+  '9473008',
+  '711028002',
+  '408940009',
+  '191888003',
+  '228514003',
+  '30483005',
+  '228515002',
+  '890112007',
+  '408939007',
+  '702388001',
+  '449867007',
+  '314538009',
+  '228518000',
+  '365980008',
+  '228509002',
+  '870621003',
+  '212899006',
+  '228499007',
+  '16077091000119100',
+  '228504007',
+  '16077171000119100',
+  '10761391000119100',
+  '857871000000107',
+  '857841000000101',
+  '722499006',
+  '785889008',
+  '786063001',
+  '276468004',
+  '46802002',
+  '160619003',
+  '217579004',
+  '217580001',
+  '242853001',
+  '225935007',
+  '225936008',
+  '1148962001',
+  '1148687006',
+  '1137691001',
+  '217526009',
+  '1148819003',
+  '722494001',
+  '724697004',
+  '56294008',
+  '30310000',
+  '313396002',
+  '143511000000101',
+  '143731000000100',
+  '143591000000105',
+  '143571000000106',
+  '143491000000109',
+  '143561000000104',
+  '143641000000101',
+  '724698009',
+  '143531000000109',
+  '390905006',
+  '784481000000108',
+  '280801000000101',
+  '280811000000104',
+  '200211000000104',
+  '790121000000107',
+  '790131000000109',
+  '217584005',
+  '217530007',
+  '160613002'
+    )
+),
+
+latest_smoking AS (
+    SELECT FK_Patient_Link_ID, ConceptID
+    FROM smoking_events
+    WHERE rn = 1
+)
+
+INSERT INTO PerPracticeData (prac_code, prac_name, region, smoke_cur)
+SELECT
+    ap.prac_code,
+    ap.prac_name,
+    ap.region,
+    COUNT(DISTINCT ap.PK_Patient_ID)
+FROM adult_patients ap
+INNER JOIN latest_smoking ls
+    ON ls.FK_Patient_Link_ID = ap.PK_Patient_Link_ID
+GROUP BY ap.prac_code, ap.prac_name, ap.region;
+
+
+------------------------------------------------------------
+-- smoke_ex
+-- Most recent record
+-- Number of adult patients who are ex-smokers
+------------------------------------------------------------
+
+WITH adult_patients AS (
+    SELECT
+        A.PK_Patient_ID,
+        pl.PK_Patient_Link_ID,
+        B.OrganisationCode AS prac_code,
+        B.Name AS prac_name,
+        B.Region AS region,
+        DATEDIFF(YEAR, A.dob, '2024-05-01')
+          - CASE 
+              WHEN MONTH(A.dob) > 5 
+                OR (MONTH(A.dob) = 5 AND DAY(A.dob) > 1)
+              THEN 1 ELSE 0
+            END AS age
+    FROM BRIT.Patient A
+    INNER JOIN BRIT.Reference_GP_Practice B
+        ON B.PK_Reference_GP_Practice_ID = A.FK_Reference_GP_Practice_ID
+    INNER JOIN BRIT.patient_link pl
+        ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+    WHERE
+        DATEDIFF(YEAR, A.dob, '2024-05-01')
+          - CASE 
+              WHEN MONTH(A.dob) > 5 
+                OR (MONTH(A.dob) = 5 AND DAY(A.dob) > 1)
+              THEN 1 ELSE 0
+            END >= 18
+),
+
+smoking_events AS (
+    SELECT
+        med.FK_Patient_Link_ID,
+        snomed.ConceptID,
+        med.EventDate,
+        ROW_NUMBER() OVER (
+            PARTITION BY med.FK_Patient_Link_ID
+            ORDER BY med.EventDate DESC
+        ) AS rn
+    FROM BRIT.GP_Events med
+    INNER JOIN BRIT.Reference_SnomedCT snomed
+        ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
+    WHERE snomed.ConceptID IN (
+'649861000006105',
+  '8517006',
+  '160620009',
+  '160617001',
+  '160621008',
+  '53896009',
+  '160625004',
+  '281018007',
+  '360890004',
+  '360900008',
+  '517211000000106',
+  '1221000175102',
+  '1092111000000100',
+  '1092131000000100',
+  '492191000000103',
+  '1092041000000100',
+  '735128000',
+  '48031000119106',
+  '1092091000000100',
+  '449368009',
+  '449369001',
+  '1092111000000100',
+  '266922007',
+  '266921000',
+  '266924008',
+  '1092071000000100',
+  '449345000',
+  '266925009',
+  '266923002',
+  '266928006',
+  '1092031000000100',
+  '1092071000000100',
+  '505761000000105',
+  '702975009',
+  '228513009',
+  '191889006',
+  '228503001',
+  '16077051000119100',
+  '85931000119105',
+  '1137692008',
+  '1137688001',
+  '908781000000104',
+  '836439001'
+    )
+),
+
+latest_smoking AS (
+    SELECT FK_Patient_Link_ID, ConceptID
+    FROM smoking_events
+    WHERE rn = 1
+)
+
+INSERT INTO PerPracticeData (prac_code, prac_name, region, smoke_ex)
+SELECT
+    ap.prac_code,
+    ap.prac_name,
+    ap.region,
+    COUNT(DISTINCT ap.PK_Patient_ID)
+FROM adult_patients ap
+INNER JOIN latest_smoking ls
+    ON ls.FK_Patient_Link_ID = ap.PK_Patient_Link_ID
+GROUP BY ap.prac_code, ap.prac_name, ap.region;
+
+
+------------------------------------------------------------
+-- smoke_unk
+-- Most recent record OR no smoking record
+-- Number of adult patients with unknown smoking status
+------------------------------------------------------------
+
+WITH adult_patients AS (
+    SELECT
+        A.PK_Patient_ID,
+        pl.PK_Patient_Link_ID,
+        B.OrganisationCode AS prac_code,
+        B.Name AS prac_name,
+        B.Region AS region,
+        DATEDIFF(YEAR, A.dob, '2024-05-01')
+          - CASE 
+              WHEN MONTH(A.dob) > 5 
+                OR (MONTH(A.dob) = 5 AND DAY(A.dob) > 1)
+              THEN 1 ELSE 0
+            END AS age
+    FROM BRIT.Patient A
+    INNER JOIN BRIT.Reference_GP_Practice B
+        ON B.PK_Reference_GP_Practice_ID = A.FK_Reference_GP_Practice_ID
+    INNER JOIN BRIT.patient_link pl
+        ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
+    WHERE
+        DATEDIFF(YEAR, A.dob, '2024-05-01')
+          - CASE 
+              WHEN MONTH(A.dob) > 5 
+                OR (MONTH(A.dob) = 5 AND DAY(A.dob) > 1)
+              THEN 1 ELSE 0
+            END >= 18
+),
+
+smoking_events AS (
+    SELECT
+        med.FK_Patient_Link_ID,
+        snomed.ConceptID,
+        med.EventDate,
+        ROW_NUMBER() OVER (
+            PARTITION BY med.FK_Patient_Link_ID
+            ORDER BY med.EventDate DESC
+        ) AS rn
+    FROM BRIT.GP_Events med
+    INNER JOIN BRIT.Reference_SnomedCT snomed
+        ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
+    WHERE snomed.ConceptID IN (
+'1098881000000100',
 '266927001',
 '711563001',
+'266927001',
 '375911000000102',
 '160614008')
 ),
-adult_patients AS (
-  SELECT *
-  FROM patient_ages
-  WHERE age >= 18
+
+latest_smoking AS (
+    SELECT FK_Patient_Link_ID, ConceptID
+    FROM smoking_events
+    WHERE rn = 1
 )
-INSERT INTO PerPracticeData(prac_code,prac_name,region,smoke_unk)
-  SELECT
-    prac_code,
-    prac_name,
-    region,
-    COUNT(DISTINCT PK_Patient_ID) AS smoke_unk
-  FROM adult_patients
-  GROUP BY prac_code,prac_name,region
-  ORDER BY prac_code,prac_name,region
-;
+
+INSERT INTO PerPracticeData (prac_code, prac_name, region, smoke_unk)
+SELECT
+    ap.prac_code,
+    ap.prac_name,
+    ap.region,
+    COUNT(DISTINCT ap.PK_Patient_ID)
+FROM adult_patients ap
+LEFT JOIN latest_smoking ls
+    ON ls.FK_Patient_Link_ID = ap.PK_Patient_Link_ID
+WHERE ls.FK_Patient_Link_ID IS NULL
+GROUP BY ap.prac_code, ap.prac_name, ap.region;
+
 
 ------------
 -- frail_modsev 
