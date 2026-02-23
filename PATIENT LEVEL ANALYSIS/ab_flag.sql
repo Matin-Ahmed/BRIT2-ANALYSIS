@@ -13,7 +13,7 @@
         ON pat.PK_Patient_ID = P.Patient_ID
     INNER JOIN [BRIT].[patient_link] pl
         ON pat.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-    INNER JOIN BRIT.GP_Medications med
+    INNER JOIN BRIT.GP_Medications_AB_Clean med
         ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
     WHERE
         CAST(med.MedicationDate AS DATE) = P.event_date
