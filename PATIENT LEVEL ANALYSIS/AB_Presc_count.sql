@@ -14,7 +14,7 @@
         ON pat.PK_Patient_ID = P.Patient_ID
     INNER JOIN [BRIT].[patient_link] pl
         ON pat.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-    INNER JOIN BRIT.GP_Medications_AB_Clean med
+    INNER JOIN BRIT.GP_Events med 
         ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
     WHERE
         med.MedicationDate >= DATEADD(YEAR, -1, P.event_date)
