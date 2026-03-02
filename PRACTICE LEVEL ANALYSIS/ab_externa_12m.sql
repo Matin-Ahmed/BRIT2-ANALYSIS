@@ -26,7 +26,7 @@ WITH patient_ages AS (
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
-      INNER JOIN BRIT.GP_Medications med_2
+      INNER JOIN #GP_Medications_Dedup med_2
       ON med_2.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
     med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME)
