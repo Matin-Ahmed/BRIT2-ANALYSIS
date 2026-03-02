@@ -167,6 +167,42 @@ INTO PerPracticeDataFinal
 FROM PerPracticeData
 WHERE 1 = 0;
 
+------------------------------------------------------------
+-- DEDUPLICATE GP MEDICATIONS (session temp table)
+-- Rule: 1 row per patient + calendar date + SuppliedCode
+------------------------------------------------------------
+IF OBJECT_ID('tempdb..#GP_Medications_Dedup','U') IS NOT NULL
+    DROP TABLE #GP_Medications_Dedup;
+
+;WITH meds_ranked AS (
+    SELECT
+        med.*,
+        ROW_NUMBER() OVER (
+            PARTITION BY
+                med.FK_Patient_Link_ID,
+                CAST(med.MedicationDate AS date),
+                med.SuppliedCode
+            ORDER BY
+                med.MedicationDate,
+                med.FK_Reference_SnomedCT_ID
+        ) AS __rn
+    FROM #GP_Medications_Dedup med
+    WHERE
+        med.MedicationDate IS NOT NULL
+        AND med.SuppliedCode IS NOT NULL
+)
+SELECT *
+INTO #GP_Medications_Dedup
+FROM meds_ranked
+WHERE __rn = 1;
+
+-- (performance): index the temp table for the common joins/filters
+CREATE INDEX IX__GP_MedsDedup__PatientDate
+ON #GP_Medications_Dedup (FK_Patient_Link_ID, MedicationDate);
+
+CREATE INDEX IX__GP_MedsDedup__SuppliedCode
+ON #GP_Medications_Dedup (SuppliedCode);
+
 --------------------
 -- all_pats_12m  
 -- One year follow-up  
@@ -4398,7 +4434,7 @@ WITH patient_ages AS (
       ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
       INNER JOIN [BRIT].[patient_link] pl 
       ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.GP_Medications med  
+      INNER JOIN #GP_Medications_Dedup med  
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
@@ -11625,7 +11661,7 @@ WITH patient_ages AS (
       ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
       INNER JOIN [BRIT].[patient_link] pl 
       ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.GP_Medications med  
+      INNER JOIN #GP_Medications_Dedup med  
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
@@ -18851,7 +18887,7 @@ WITH patient_ages AS (
       ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
       INNER JOIN [BRIT].[patient_link] pl 
       ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.GP_Medications med  
+      INNER JOIN #GP_Medications_Dedup med  
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
@@ -26079,7 +26115,7 @@ WITH patient_ages AS (
       ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
       INNER JOIN [BRIT].[patient_link] pl 
       ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.GP_Medications med  
+      INNER JOIN #GP_Medications_Dedup med  
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
@@ -33305,7 +33341,7 @@ WITH patient_ages AS (
       ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
       INNER JOIN [BRIT].[patient_link] pl 
       ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.GP_Medications med  
+      INNER JOIN #GP_Medications_Dedup med  
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
@@ -40530,7 +40566,7 @@ WITH patient_ages AS (
       ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
       INNER JOIN [BRIT].[patient_link] pl 
       ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.GP_Medications med  
+      INNER JOIN #GP_Medications_Dedup med  
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
@@ -48369,7 +48405,7 @@ WITH patient_ages AS (
       ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
       INNER JOIN [BRIT].[patient_link] pl 
       ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.GP_Medications med  
+      INNER JOIN #GP_Medications_Dedup med  
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
@@ -50270,7 +50306,7 @@ WITH patient_ages AS (
       ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
       INNER JOIN [BRIT].[patient_link] pl 
       ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.GP_Medications med  
+      INNER JOIN #GP_Medications_Dedup med  
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
 ),
 adult_patients AS (
@@ -50323,7 +50359,7 @@ WITH patient_ages AS (
       ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
       INNER JOIN [BRIT].[patient_link] pl 
       ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.GP_Medications med  
+      INNER JOIN #GP_Medications_Dedup med  
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
 ),
 adult_patients AS (
@@ -50376,7 +50412,7 @@ WITH patient_ages AS (
       ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
       INNER JOIN [BRIT].[patient_link] pl 
       ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.GP_Medications med  
+      INNER JOIN #GP_Medications_Dedup med  
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
   med.MedicationDate BETWEEN CAST('2024-09-22 00:00:00' AS DATETIME) and CAST('2024-12-20 00:00:00' AS DATETIME) 
@@ -50428,7 +50464,7 @@ WITH patient_ages AS (
       ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
       INNER JOIN [BRIT].[patient_link] pl 
       ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.GP_Medications med  
+      INNER JOIN #GP_Medications_Dedup med  
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
     med.MedicationDate BETWEEN CAST('2024-12-21 00:00:00' AS DATETIME) and CAST('2025-03-19 00:00:00' AS DATETIME) 
@@ -50480,7 +50516,7 @@ WITH patient_ages AS (
       ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
       INNER JOIN [BRIT].[patient_link] pl 
       ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.GP_Medications med  
+      INNER JOIN #GP_Medications_Dedup med  
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
     (med.MedicationDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2024-06-19 00:00:00' AS DATETIME) or
@@ -50532,7 +50568,7 @@ WITH patient_ages AS (
       ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
       INNER JOIN [BRIT].[patient_link] pl 
       ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.GP_Medications med  
+      INNER JOIN #GP_Medications_Dedup med  
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
     med.MedicationDate BETWEEN CAST('2024-06-20 00:00:00' AS DATETIME) and CAST('2024-09-21 00:00:00' AS DATETIME) 
@@ -50587,7 +50623,7 @@ WITH patient_ages AS (
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
-      INNER JOIN BRIT.GP_Medications med_2
+      INNER JOIN #GP_Medications_Dedup med_2
       ON med_2.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
     med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
@@ -57842,7 +57878,7 @@ WITH patient_ages AS (
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
-      INNER JOIN BRIT.GP_Medications med_2
+      INNER JOIN #GP_Medications_Dedup med_2
       ON med_2.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
     med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
@@ -65085,7 +65121,7 @@ WITH patient_ages AS (
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
-      INNER JOIN BRIT.GP_Medications med_2
+      INNER JOIN #GP_Medications_Dedup med_2
       ON med_2.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
     med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
@@ -72350,7 +72386,7 @@ WITH patient_ages AS (
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
-      INNER JOIN BRIT.GP_Medications med_2
+      INNER JOIN #GP_Medications_Dedup med_2
       ON med_2.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
     med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
@@ -79613,7 +79649,7 @@ WITH patient_ages AS (
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
-      INNER JOIN BRIT.GP_Medications med_2
+      INNER JOIN #GP_Medications_Dedup med_2
       ON med_2.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
     med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
@@ -86869,7 +86905,7 @@ WITH patient_ages AS (
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
-      INNER JOIN BRIT.GP_Medications med_2
+      INNER JOIN #GP_Medications_Dedup med_2
       ON med_2.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
     med.EventDate BETWEEN CAST('2023-02-01 00:00:00' AS DATETIME) and CAST('2024-02-01 00:00:00' AS DATETIME) 
@@ -94117,7 +94153,7 @@ WITH patient_ages AS (
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
-      INNER JOIN BRIT.GP_Medications med_2
+      INNER JOIN #GP_Medications_Dedup med_2
       ON med_2.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
     med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME)
@@ -101371,7 +101407,7 @@ WITH patient_ages AS (
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
-      INNER JOIN BRIT.GP_Medications med_2
+      INNER JOIN #GP_Medications_Dedup med_2
       ON med_2.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
     med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME) 
@@ -108614,7 +108650,7 @@ WITH patient_ages AS (
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
-      INNER JOIN BRIT.GP_Medications med_2
+      INNER JOIN #GP_Medications_Dedup med_2
       ON med_2.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
     med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME)
@@ -115879,7 +115915,7 @@ WITH patient_ages AS (
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
-      INNER JOIN BRIT.GP_Medications med_2
+      INNER JOIN #GP_Medications_Dedup med_2
       ON med_2.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
     med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME)
@@ -123141,7 +123177,7 @@ WITH patient_ages AS (
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
-      INNER JOIN BRIT.GP_Medications med_2
+      INNER JOIN #GP_Medications_Dedup med_2
       ON med_2.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
     med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME)
@@ -130397,7 +130433,7 @@ WITH patient_ages AS (
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
-      INNER JOIN BRIT.GP_Medications med_2
+      INNER JOIN #GP_Medications_Dedup med_2
       ON med_2.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
     med.EventDate BETWEEN CAST('2024-05-01 00:00:00' AS DATETIME) and CAST('2025-05-01 00:00:00' AS DATETIME) 
