@@ -22,7 +22,7 @@ WITH patient_ages AS (
       ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
       INNER JOIN [BRIT].[patient_link] pl 
       ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.GP_Medications med  
+      INNER JOIN #GP_Medications_Dedup med  
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
   WHERE
     med.MedicationDate BETWEEN CAST('2024-12-21 00:00:00' AS DATETIME) and CAST('2025-03-19 00:00:00' AS DATETIME) 
