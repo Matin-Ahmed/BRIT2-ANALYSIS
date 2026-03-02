@@ -20,7 +20,7 @@ WITH patient_ages AS (
       ON B.PK_Reference_GP_Practice_ID=A.FK_Reference_GP_Practice_ID 
       INNER JOIN [BRIT].[patient_link] pl 
       ON A.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
-      INNER JOIN BRIT.GP_Medications med  
+      INNER JOIN #GP_Medications_Dedup med  
       ON med.FK_Patient_Link_ID = pl.PK_Patient_Link_ID
       INNER JOIN BRIT.Reference_SnomedCT snomed
       ON snomed.PK_Reference_SnomedCT_ID = med.FK_Reference_SnomedCT_ID
