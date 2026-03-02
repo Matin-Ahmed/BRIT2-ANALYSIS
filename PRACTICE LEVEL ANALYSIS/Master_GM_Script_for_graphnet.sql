@@ -5,6 +5,40 @@ IF OBJECT_ID('PerPracticeData', 'U') IS NOT NULL DROP TABLE PerPracticeData;
 IF OBJECT_ID('PerPracticeDataFinal', 'U') IS NOT NULL DROP TABLE PerPracticeDataFinal;
 
 ------------------------------------------------------------
+-- DEDUPLICATE GP MEDICATIONS (TEMP TABLE)
+-- Keep 1 row per: FK_Patient_Link_ID + CAST(MedicationDate as date) + SuppliedCode
+------------------------------------------------------------
+IF OBJECT_ID('tempdb..#GP_Medications_Dedup','U') IS NOT NULL
+    DROP TABLE #GP_Medications_Dedup;
+
+SELECT
+    m.*
+INTO #GP_Medications_Dedup
+FROM (
+    SELECT
+        med.*,
+        ROW_NUMBER() OVER (
+            PARTITION BY
+                med.FK_Patient_Link_ID,
+                CAST(med.MedicationDate AS date),
+                med.SuppliedCode
+            ORDER BY
+                med.MedicationDate,
+                ISNULL(med.FK_Reference_SnomedCT_ID, 0)  -- common stable column in BRIT extracts
+        ) AS rn
+    FROM BRIT.GP_Medications med
+    WHERE med.MedicationDate IS NOT NULL
+      AND med.SuppliedCode IS NOT NULL
+) m
+WHERE m.rn = 1;
+
+CREATE INDEX IX__GP_MedsDedup__PatientDate
+ON #GP_Medications_Dedup (FK_Patient_Link_ID, MedicationDate);
+
+CREATE INDEX IX__GP_MedsDedup__SuppliedCode
+ON #GP_Medications_Dedup (SuppliedCode);
+
+------------------------------------------------------------
 -- CREATE PerPracticeData (MASTER TABLE)
 ------------------------------------------------------------
 CREATE TABLE PerPracticeData (
@@ -166,42 +200,6 @@ SELECT *
 INTO PerPracticeDataFinal
 FROM PerPracticeData
 WHERE 1 = 0;
-
-------------------------------------------------------------
--- DEDUPLICATE GP MEDICATIONS (session temp table)
--- Rule: 1 row per patient + calendar date + SuppliedCode
-------------------------------------------------------------
-IF OBJECT_ID('tempdb..#GP_Medications_Dedup','U') IS NOT NULL
-    DROP TABLE #GP_Medications_Dedup;
-
-;WITH meds_ranked AS (
-    SELECT
-        med.*,
-        ROW_NUMBER() OVER (
-            PARTITION BY
-                med.FK_Patient_Link_ID,
-                CAST(med.MedicationDate AS date),
-                med.SuppliedCode
-            ORDER BY
-                med.MedicationDate,
-                med.FK_Reference_SnomedCT_ID
-        ) AS __rn
-    FROM #GP_Medications_Dedup med
-    WHERE
-        med.MedicationDate IS NOT NULL
-        AND med.SuppliedCode IS NOT NULL
-)
-SELECT *
-INTO #GP_Medications_Dedup
-FROM meds_ranked
-WHERE __rn = 1;
-
--- (performance): index the temp table for the common joins/filters
-CREATE INDEX IX__GP_MedsDedup__PatientDate
-ON #GP_Medications_Dedup (FK_Patient_Link_ID, MedicationDate);
-
-CREATE INDEX IX__GP_MedsDedup__SuppliedCode
-ON #GP_Medications_Dedup (SuppliedCode);
 
 --------------------
 -- all_pats_12m  
