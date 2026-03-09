@@ -6,37 +6,88 @@ IF OBJECT_ID('PerPracticeDataFinal', 'U') IS NOT NULL DROP TABLE PerPracticeData
 
 ------------------------------------------------------------
 -- DEDUPLICATE GP MEDICATIONS (TEMP TABLE)
--- Keep 1 row per: FK_Patient_Link_ID + CAST(MedicationDate as date) + SuppliedCode
+--
+-- Deduplicate by:
+--   FK_Patient_Link_ID + CalendarDate(MedicationDate) + SuppliedCode + FK_Reference_SnomedCT_ID
+--
+-- Selection rule within duplicates:
+--   - If any records have a non-midnight time component, keep the latest timestamped record
+--   - Else (all are 00:00:00), keep the highest Quantity
 ------------------------------------------------------------
 IF OBJECT_ID('tempdb..#GP_Medications_Dedup','U') IS NOT NULL
     DROP TABLE #GP_Medications_Dedup;
 
-SELECT
-    m.*
-INTO #GP_Medications_Dedup
-FROM (
+;WITH meds_raw AS (
     SELECT
         med.*,
-        ROW_NUMBER() OVER (
-            PARTITION BY
-                med.FK_Patient_Link_ID,
-                CAST(med.MedicationDate AS date),
-                med.SuppliedCode
-            ORDER BY
-                med.MedicationDate,
-                ISNULL(med.FK_Reference_SnomedCT_ID, 0)  -- common stable column in BRIT extracts
-        ) AS rn
+        CAST(med.MedicationDate AS date) AS MedicationDate_Date,
+        CASE
+            WHEN CAST(med.MedicationDate AS time(0)) <> CAST('00:00:00' AS time(0))
+            THEN 1 ELSE 0
+        END AS is_timestamped,
+        TRY_CONVERT(decimal(18,4), med.Quantity) AS Quantity_num
     FROM BRIT.GP_Medications med
     WHERE med.MedicationDate IS NOT NULL
-      AND med.SuppliedCode IS NOT NULL
-) m
-WHERE m.rn = 1;
+      AND med.SuppliedCode   IS NOT NULL
+),
+meds_scored AS (
+    SELECT
+        r.*,
+        MAX(r.is_timestamped) OVER (
+            PARTITION BY
+                r.FK_Patient_Link_ID,
+                r.MedicationDate_Date,
+                r.SuppliedCode,
+                ISNULL(r.FK_Reference_SnomedCT_ID, 0)
+        ) AS has_any_timestamp
+    FROM meds_raw r
+),
+meds_ranked AS (
+    SELECT
+        s.*,
+        ROW_NUMBER() OVER (
+            PARTITION BY
+                s.FK_Patient_Link_ID,
+                s.MedicationDate_Date,
+                s.SuppliedCode,
+                ISNULL(s.FK_Reference_SnomedCT_ID, 0)
+            ORDER BY
+               
+                CASE
+                    WHEN s.has_any_timestamp = 1 AND s.is_timestamped = 1 THEN 0
+                    WHEN s.has_any_timestamp = 1 AND s.is_timestamped = 0 THEN 1
+                    ELSE 0
+                END ASC,
+
+              
+                CASE WHEN s.has_any_timestamp = 1 THEN s.MedicationDate END DESC,
+
+                
+                CASE WHEN s.has_any_timestamp = 1 THEN s.Quantity_num END DESC,
+
+               
+                CASE WHEN s.has_any_timestamp = 0 THEN s.Quantity_num END DESC,
+
+                
+                s.LastIssueDate DESC,
+                ISNULL(s.FK_Reference_Coding_ID, 0) DESC
+        ) AS rn
+    FROM meds_scored s
+)
+SELECT *
+INTO #GP_Medications_Dedup
+FROM meds_ranked
+WHERE rn = 1;
+
 
 CREATE INDEX IX__GP_MedsDedup__PatientDate
 ON #GP_Medications_Dedup (FK_Patient_Link_ID, MedicationDate);
 
 CREATE INDEX IX__GP_MedsDedup__SuppliedCode
 ON #GP_Medications_Dedup (SuppliedCode);
+
+CREATE INDEX IX__GP_MedsDedup__PatientDateDrug
+ON #GP_Medications_Dedup (FK_Patient_Link_ID, MedicationDate, SuppliedCode);
 
 ------------------------------------------------------------
 -- CREATE PerPracticeData (MASTER TABLE)
