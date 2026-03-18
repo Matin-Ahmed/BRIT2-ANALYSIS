@@ -7221,7 +7221,7 @@ INSERT INTO PerPracticeData(prac_code,prac_name,region,ab_count_bl)
     region,
     COUNT(DISTINCT PK_Patient_ID) AS ab_count_bl
   FROM adult_patients
-  WHERE pers_count >= 1
+  WHERE pers_count > 1
   GROUP BY prac_code,prac_name,region
   ORDER BY prac_code,prac_name,region
 ;
