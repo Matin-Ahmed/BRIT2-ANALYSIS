@@ -4,6 +4,7 @@
 -- Number of sinusitis-coded GP event rows from adult patients during trial period.
 ------------
 
+
 WITH patient_ages AS (
     SELECT
         A.PK_Patient_ID,
